@@ -10,6 +10,24 @@ import 'package:path/path.dart' as p;
 part 'MyDatabase.g.dart';
 
 
+LazyDatabase _openConnection() {
+  // the LazyDatabase util lets us find the right location for the file async.
+  return LazyDatabase(() async {
+    // put the database file, called db.sqlite here, into the documents folder
+    // for your app.
+    final dbFolder = await getApplicationDocumentsDirectory();
+    final file = File(p.join(dbFolder.path, 'app.db'));
+
+    if (!await file.exists()) {
+      // Extract the pre-populated database file from assets
+      final blob = await rootBundle.load('assets/acc.db');
+      final buffer = blob.buffer;
+      await file.writeAsBytes(buffer.asUint8List(blob.offsetInBytes, blob.lengthInBytes));
+    }
+
+    return NativeDatabase(file);
+  });
+}
 
 @DriftDatabase(
   include: {'tables.drift'},)
@@ -56,6 +74,9 @@ class MyDatabase extends _$MyDatabase {
   }
 
   Future<dynamic> mGetData(String table) {
+    if (table == null) {
+      print('Get data called with null table...');
+    }
 
     return customSelect(
       'SELECT * FROM $table',
@@ -75,8 +96,23 @@ class MyDatabase extends _$MyDatabase {
     return tableInfoMap?[table]!;
   }
 
+  Future<void> exportInto(File file) async {
+    // Make sure the directory of the target file exists
+    await file.parent.create(recursive: true);
+
+    // Override an existing backup, sqlite expects the target file to be empty
+    if (file.existsSync()) {
+      file.deleteSync();
+    }
+    await customStatement('VACUUM INTO ?', [file.path]);
+  }
+
+  int boolToInt(bool) {
+    return bool ? 1 : 0;
+  }
+
   void initTableMap() {
-    tableMap = {
+    tableMap ??= {
       'acgc_carpet': acgcCarpet,
       'acgc_wallpaper': acgcWallpaper,
       'acgc_fish': acgcFish,
@@ -344,7 +380,7 @@ class MyDatabase extends _$MyDatabase {
   }
 
   void initTableInfoMap() {
-    tableInfoMap = {
+    tableInfoMap ??= {
       'acgc_carpet': acgcCarpet,
       'acgc_wallpaper': acgcWallpaper,
       'acgc_fish': acgcFish,
@@ -615,400 +651,366 @@ class MyDatabase extends _$MyDatabase {
     int s = boolToInt(selected);
 
     switch(table) {
-    case 'acgc_carpet': { await update(acgcCarpet)
-    ..where((tbl) => acgcCarpet.index.equals(index))
-    ..write(AcgcCarpetData(selected: s));
-    break; }
-    case 'acgc_wallpaper': { await update(acgcWallpaper)
-    ..where((tbl) => acgcWallpaper.index.equals(index))
-    ..write(AcgcWallpaperData(selected: s));
-    break; }
-    case 'acgc_fish': { await update(acgcFish)
-    ..where((tbl) => acgcFish.index.equals(index))
-    ..write(AcgcFishData(selected: s));
-    break; }
-    case 'acgc_fossil': { await update(acgcFossil)
-    ..where((tbl) => acgcFossil.index.equals(index))
-    ..write(AcgcFossilData(selected: s));
-    break; }
-    case 'acgc_gyroid': { await update(acgcGyroid)
-    ..where((tbl) => acgcGyroid.index.equals(index))
-    ..write(AcgcGyroidData(selected: s));
-    break; }
-    case 'acgc_insect': { await update(acgcInsect)
-    ..where((tbl) => acgcInsect.index.equals(index))
-    ..write(AcgcInsectData(selected: s));
-    break; }
-    case 'acgc_shirt': { await update(acgcShirt)
-    ..where((tbl) => acgcShirt.index.equals(index))
-    ..write(AcgcShirtData(selected: s));
-    break; }
-    case 'acgc_song': { await update(acgcSong)
-    ..where((tbl) => acgcSong.index.equals(index))
-    ..write(AcgcSongData(selected: s));
-    break; }
-    case 'acgc_stationery': { await update(acgcStationery)
-    ..where((tbl) => acgcStationery.index.equals(index))
-    ..write(AcgcStationeryData(selected: s));
-    break; }
-    case 'acgc_tool': { await update(acgcTool)
-    ..where((tbl) => acgcTool.index.equals(index))
-    ..write(AcgcToolData(selected: s));
-    break; }
-    case 'acww_accessory': { await update(acwwAccessory)
-    ..where((tbl) => acwwAccessory.index.equals(index))
-    ..write(AcwwAccessoryData(selected: s));
-    break; }
-    case 'acww_carpet': { await update(acwwCarpet)
-    ..where((tbl) => acwwCarpet.index.equals(index))
-    ..write(AcwwCarpetData(selected: s));
-    break; }
-    case 'acww_fish': { await update(acwwFish)
-    ..where((tbl) => acwwFish.index.equals(index))
-    ..write(AcwwFishData(selected: s));
-    break; }
-    case 'acww_fossil': { await update(acwwFossil)
-    ..where((tbl) => acwwFossil.index.equals(index))
-    ..write(AcwwFossilData(selected: s));
-    break; }
-    case 'acww_furniture': { await update(acwwFurniture)
-    ..where((tbl) => acwwFurniture.index.equals(index))
-    ..write(AcwwFurnitureData(selected: s));
-    break; }
-    case 'acww_gyroid': { await update(acwwGyroid)
-    ..where((tbl) => acwwGyroid.index.equals(index))
-    ..write(AcwwGyroidData(selected: s));
-    break; }
-    case 'acww_insect': { await update(acwwInsect)
-    ..where((tbl) => acwwInsect.index.equals(index))
-    ..write(AcwwInsectData(selected: s));
-    break; }
-    case 'acww_shirt': { await update(acwwShirt)
-    ..where((tbl) => acwwShirt.index.equals(index))
-    ..write(AcwwShirtData(selected: s));
-    break; }
-    case 'acww_song': { await update(acwwSong)
-    ..where((tbl) => acwwSong.index.equals(index))
-    ..write(AcwwSongData(selected: s));
-    break; }
-    case 'acww_stationery': { await update(acwwStationery)
-    ..where((tbl) => acwwStationery.index.equals(index))
-    ..write(AcwwStationeryData(selected: s));
-    break; }
-    case 'acww_tool': { await update(acwwTool)
-    ..where((tbl) => acwwTool.index.equals(index))
-    ..write(AcwwToolData(selected: s));
-    break; }
-    case 'acww_wallpaper': { await update(acwwWallpaper)
-    ..where((tbl) => acwwWallpaper.index.equals(index))
-    ..write(AcwwWallpaperData(selected: s));
-    break; }
-    case 'accf_accessory': { await update(accfAccessory)
-    ..where((tbl) => accfAccessory.index.equals(index))
-    ..write(AccfAccessoryData(selected: s));
-    break; }
-    case 'accf_carpet': { await update(accfCarpet)
-    ..where((tbl) => accfCarpet.index.equals(index))
-    ..write(AccfCarpetData(selected: s));
-    break; }
-    case 'accf_fossil': { await update(accfFossil)
-    ..where((tbl) => accfFossil.index.equals(index))
-    ..write(AccfFossilData(selected: s));
-    break; }
-    case 'accf_fish': { await update(accfFish)
-    ..where((tbl) => accfFish.index.equals(index))
-    ..write(AccfFishData(selected: s));
-    break; }
-    case 'accf_furniture': { await update(accfFurniture)
-    ..where((tbl) => accfFurniture.index.equals(index))
-    ..write(AccfFurnitureData(selected: s));
-    break; }
-    case 'accf_gyroid': { await update(accfGyroid)
-    ..where((tbl) => accfGyroid.index.equals(index))
-    ..write(AccfGyroidData(selected: s));
-    break; }
-    case 'accf_insect': { await update(accfInsect)
-    ..where((tbl) => accfInsect.index.equals(index))
-    ..write(AccfInsectData(selected: s));
-    break; }
-    case 'accf_painting': { await update(accfPainting)
-    ..where((tbl) => accfPainting.index.equals(index))
-    ..write(AccfPaintingData(selected: s));
-    break; }
-    case 'accf_shirt': { await update(accfShirt)
-    ..where((tbl) => accfShirt.index.equals(index))
-    ..write(AccfShirtData(selected: s));
-    break; }
-    case 'accf_song': { await update(accfSong)
-    ..where((tbl) => accfSong.index.equals(index))
-    ..write(AccfSongData(selected: s));
-    break; }
-    case 'accf_stationery': { await update(accfStationery)
-    ..where((tbl) => accfStationery.index.equals(index))
-    ..write(AccfStationeryData(selected: s));
-    break; }
-    case 'accf_tool': { await update(accfTool)
-    ..where((tbl) => accfTool.index.equals(index))
-    ..write(AccfToolData(selected: s));
-    break; }
-    case 'accf_wallpaper': { await update(accfWallpaper)
-    ..where((tbl) => accfWallpaper.index.equals(index))
-    ..write(AccfWallpaperData(selected: s));
-    break; }
-    case 'acnl_accessory': { await update(acnlAccessory)
-    ..where((tbl) => acnlAccessory.index.equals(index))
-    ..write(AcnlAccessoryData(selected: s));
-    break; }
-    case 'acnl_art': { await update(acnlArt)
-    ..where((tbl) => acnlArt.index.equals(index))
-    ..write(AcnlArtData(selected: s));
-    break; }
-    case 'acnl_bottom': { await update(acnlBottom)
-    ..where((tbl) => acnlBottom.index.equals(index))
-    ..write(AcnlBottomData(selected: s));
-    break; }
-    case 'acnl_carpet': { await update(acnlCarpet)
-    ..where((tbl) => acnlCarpet.index.equals(index))
-    ..write(AcnlCarpetData(selected: s));
-    break; }
-    case 'acnl_dlc': { await update(acnlDlc)
-    ..where((tbl) => acnlDlc.index.equals(index))
-    ..write(AcnlDlcData(selected: s));
-    break; }
-    case 'acnl_dress': { await update(acnlDress)
-    ..where((tbl) => acnlDress.index.equals(index))
-    ..write(AcnlDres(selected: s));
-    break; }
-    case 'acnl_feet': { await update(acnlFeet)
-    ..where((tbl) => acnlFeet.index.equals(index))
-    ..write(AcnlFeetData(selected: s));
-    break; }
-    case 'acnl_fish': { await update(acnlFish)
-    ..where((tbl) => acnlFish.index.equals(index))
-    ..write(AcnlFishData(selected: s));
-    break; }
-    case 'acnl_fossil': { await update(acnlFossil)
-    ..where((tbl) => acnlFossil.index.equals(index))
-    ..write(AcnlFossilData(selected: s));
-    break; }
-    case 'acnl_fossil_model': { await update(acnlFossilModel)
-    ..where((tbl) => acnlFossilModel.index.equals(index))
-    ..write(AcnlFossilModelData(selected: s));
-    break; }
-    case 'acnl_furniture': { await update(acnlFurniture)
-    ..where((tbl) => acnlFurniture.index.equals(index))
-    ..write(AcnlFurnitureData(selected: s));
-    break; }
-    case 'acnl_gyroid': { await update(acnlGyroid)
-    ..where((tbl) => acnlGyroid.index.equals(index))
-    ..write(AcnlGyroidData(selected: s));
-    break; }
-    case 'acnl_hat': { await update(acnlHat)
-    ..where((tbl) => acnlHat.index.equals(index))
-    ..write(AcnlHatData(selected: s));
-    break; }
-    case 'acnl_insect': { await update(acnlInsect)
-    ..where((tbl) => acnlInsect.index.equals(index))
-    ..write(AcnlInsectData(selected: s));
-    break; }
-    case 'acnl_music_box': { await update(acnlMusicBox)
-    ..where((tbl) => acnlMusicBox.index.equals(index))
-    ..write(AcnlMusicBoxData(selected: s));
-    break; }
-    case 'acnl_seafood': { await update(acnlSeafood)
-    ..where((tbl) => acnlSeafood.index.equals(index))
-    ..write(AcnlSeafoodData(selected: s));
-    break; }
-    case 'acnl_shirt': { await update(acnlShirt)
-    ..where((tbl) => acnlShirt.index.equals(index))
-    ..write(AcnlShirtData(selected: s));
-    break; }
-    case 'acnl_song': { await update(acnlSong)
-    ..where((tbl) => acnlSong.index.equals(index))
-    ..write(AcnlSongData(selected: s));
-    break; }
-    case 'acnl_stationery': { await update(acnlStationery)
-    ..where((tbl) => acnlStationery.index.equals(index))
-    ..write(AcnlStationeryData(selected: s));
-    break; }
-    case 'acnl_tool': { await update(acnlTool)
-    ..where((tbl) => acnlTool.index.equals(index))
-    ..write(AcnlToolData(selected: s));
-    break; }
-    case 'acnl_villager_picture': { await update(acnlVillagerPicture)
-    ..where((tbl) => acnlVillagerPicture.index.equals(index))
-    ..write(AcnlVillagerPictureData(selected: s));
-    break; }
-    case 'acnl_wallpaper': { await update(acnlWallpaper)
-    ..where((tbl) => acnlWallpaper.index.equals(index))
-    ..write(AcnlWallpaperData(selected: s));
-    break; }
-    case 'acnl_wet_suit': { await update(acnlWetSuit)
-    ..where((tbl) => acnlWetSuit.index.equals(index))
-    ..write(AcnlWetSuitData(selected: s));
-    break; }
-    case 'acnh_accessory': { await update(acnhAccessory)
-    ..where((tbl) => acnhAccessory.index.equals(index))
-    ..write(AcnhAccessoryData(selected: s));
-    break; }
-    case 'acnh_art': { await update(acnhArt)
-    ..where((tbl) => acnhArt.index.equals(index))
-    ..write(AcnhArtData(selected: s));
-    break; }
-    case 'acnh_bag': { await update(acnhBag)
-    ..where((tbl) => acnhBag.index.equals(index))
-    ..write(AcnhBagData(selected: s));
-    break; }
-    case 'acnh_bottom': { await update(acnhBottom)
-    ..where((tbl) => acnhBottom.index.equals(index))
-    ..write(AcnhBottomData(selected: s));
-    break; }
-    case 'acnh_dress': { await update(acnhDress)
-    ..where((tbl) => acnhDress.index.equals(index))
-    ..write(AcnhDres(selected: s));
-    break; }
-    case 'acnh_fencing': { await update(acnhFencing)
-    ..where((tbl) => acnhFencing.index.equals(index))
-    ..write(AcnhFencingData(selected: s));
-    break; }
-    case 'acnh_fish': { await update(acnhFish)
-    ..where((tbl) => acnhFish.index.equals(index))
-    ..write(AcnhFishData(selected: s));
-    break; }
-    case 'acnh_flooring': { await update(acnhFlooring)
-    ..where((tbl) => acnhFlooring.index.equals(index))
-    ..write(AcnhFlooringData(selected: s));
-    break; }
-    case 'acnh_fossil': { await update(acnhFossil)
-    ..where((tbl) => acnhFossil.index.equals(index))
-    ..write(AcnhFossilData(selected: s));
-    break; }
-    case 'acnh_headwear': { await update(acnhHeadwear)
-    ..where((tbl) => acnhHeadwear.index.equals(index))
-    ..write(AcnhHeadwearData(selected: s));
-    break; }
-    case 'acnh_houseware': { await update(acnhHouseware)
-    ..where((tbl) => acnhHouseware.index.equals(index))
-    ..write(AcnhHousewareData(selected: s));
-    break; }
-    case 'acnh_misc': { await update(acnhMisc)
-    ..where((tbl) => acnhMisc.index.equals(index))
-    ..write(AcnhMiscData(selected: s));
-    break; }
-    case 'acnh_wall_mounted': { await update(acnhWallMounted)
-    ..where((tbl) => acnhWallMounted.index.equals(index))
-    ..write(AcnhWallMountedData(selected: s));
-    break; }
-    case 'acnh_ceiling': { await update(acnhCeiling)
-    ..where((tbl) => acnhCeiling.index.equals(index))
-    ..write(AcnhCeilingData(selected: s));
-    break; }
-    case 'acnh_interior': { await update(acnhInterior)
-    ..where((tbl) => acnhInterior.index.equals(index))
-    ..write(AcnhInteriorData(selected: s));
-    break; }
-    case 'acnh_gyroid': { await update(acnhGyroid)
-    ..where((tbl) => acnhGyroid.index.equals(index))
-    ..write(AcnhGyroidData(selected: s));
-    break; }
-    case 'acnh_hybrid': { await update(acnhHybrid)
-    ..where((tbl) => acnhHybrid.index.equals(index))
-    ..write(AcnhHybridData(selected: s));
-    break; }
-    case 'acnh_insect': { await update(acnhInsect)
-    ..where((tbl) => acnhInsect.index.equals(index))
-    ..write(AcnhInsectData(selected: s));
-    break; }
-    case 'acnh_photo': { await update(acnhPhoto)
-    ..where((tbl) => acnhPhoto.index.equals(index))
-    ..write(AcnhPhotoData(selected: s));
-    break; }
-    case 'acnh_poster': { await update(acnhPoster)
-    ..where((tbl) => acnhPoster.index.equals(index))
-    ..write(AcnhPosterData(selected: s));
-    break; }
-    case 'acnh_recipe': { await update(acnhRecipe)
-    ..where((tbl) => acnhRecipe.index.equals(index))
-    ..write(AcnhRecipeData(selected: s));
-    break; }
-    case 'acnh_rug': { await update(acnhRug)
-    ..where((tbl) => acnhRug.index.equals(index))
-    ..write(AcnhRugData(selected: s));
-    break; }
-    case 'acnh_shoe': { await update(acnhShoe)
-    ..where((tbl) => acnhShoe.index.equals(index))
-    ..write(AcnhShoeData(selected: s));
-    break; }
-    case 'acnh_sock': { await update(acnhSock)
-    ..where((tbl) => acnhSock.index.equals(index))
-    ..write(AcnhSockData(selected: s));
-    break; }
-    case 'acnh_song': { await update(acnhSong)
-    ..where((tbl) => acnhSong.index.equals(index))
-    ..write(AcnhSongData(selected: s));
-    break; }
-    case 'acnh_tool': { await update(acnhTool)
-    ..where((tbl) => acnhTool.index.equals(index))
-    ..write(AcnhToolData(selected: s));
-    break; }
-    case 'acnh_top': { await update(acnhTop)
-    ..where((tbl) => acnhTop.index.equals(index))
-    ..write(AcnhTopData(selected: s));
-    break; }
-    case 'acnh_umbrella': { await update(acnhUmbrella)
-    ..where((tbl) => acnhUmbrella.index.equals(index))
-    ..write(AcnhUmbrellaData(selected: s));
-    break; }
-    case 'acnh_wallpaper': { await update(acnhWallpaper)
-    ..where((tbl) => acnhWallpaper.index.equals(index))
-    ..write(AcnhWallpaperData(selected: s));
-    break; }
-    case 'acgc_furniture': { await update(acgcFurniture)
-    ..where((tbl) => acgcFurniture.index.equals(index))
-    ..write(AcgcFurnitureData(selected: s));
-    break; }
-    case 'acnh_other_clothing': { await update(acnhOtherClothing)
-    ..where((tbl) => acnhOtherClothing.index.equals(index))
-    ..write(AcnhOtherClothingData(selected: s));
-    break; }
-    case 'acnh_sea_creature': { await update(acnhSeaCreature)
-    ..where((tbl) => acnhSeaCreature.index.equals(index))
-    ..write(AcnhSeaCreatureData(selected: s));
-    break; }
-  }
-  }
-
-  Future<void> exportInto(File file) async {
-    // Make sure the directory of the target file exists
-    await file.parent.create(recursive: true);
-
-    // Override an existing backup, sqlite expects the target file to be empty
-    if (file.existsSync()) {
-      file.deleteSync();
+      case 'acgc_carpet': { await update(acgcCarpet)
+      ..where((tbl) => acgcCarpet.index.equals(index))
+      ..write(AcgcCarpetData(selected: s));
+      break; }
+      case 'acgc_wallpaper': { await update(acgcWallpaper)
+      ..where((tbl) => acgcWallpaper.index.equals(index))
+      ..write(AcgcWallpaperData(selected: s));
+      break; }
+      case 'acgc_fish': { await update(acgcFish)
+      ..where((tbl) => acgcFish.index.equals(index))
+      ..write(AcgcFishData(selected: s));
+      break; }
+      case 'acgc_fossil': { await update(acgcFossil)
+      ..where((tbl) => acgcFossil.index.equals(index))
+      ..write(AcgcFossilData(selected: s));
+      break; }
+      case 'acgc_gyroid': { await update(acgcGyroid)
+      ..where((tbl) => acgcGyroid.index.equals(index))
+      ..write(AcgcGyroidData(selected: s));
+      break; }
+      case 'acgc_insect': { await update(acgcInsect)
+      ..where((tbl) => acgcInsect.index.equals(index))
+      ..write(AcgcInsectData(selected: s));
+      break; }
+      case 'acgc_shirt': { await update(acgcShirt)
+      ..where((tbl) => acgcShirt.index.equals(index))
+      ..write(AcgcShirtData(selected: s));
+      break; }
+      case 'acgc_song': { await update(acgcSong)
+      ..where((tbl) => acgcSong.index.equals(index))
+      ..write(AcgcSongData(selected: s));
+      break; }
+      case 'acgc_stationery': { await update(acgcStationery)
+      ..where((tbl) => acgcStationery.index.equals(index))
+      ..write(AcgcStationeryData(selected: s));
+      break; }
+      case 'acgc_tool': { await update(acgcTool)
+      ..where((tbl) => acgcTool.index.equals(index))
+      ..write(AcgcToolData(selected: s));
+      break; }
+      case 'acww_accessory': { await update(acwwAccessory)
+      ..where((tbl) => acwwAccessory.index.equals(index))
+      ..write(AcwwAccessoryData(selected: s));
+      break; }
+      case 'acww_carpet': { await update(acwwCarpet)
+      ..where((tbl) => acwwCarpet.index.equals(index))
+      ..write(AcwwCarpetData(selected: s));
+      break; }
+      case 'acww_fish': { await update(acwwFish)
+      ..where((tbl) => acwwFish.index.equals(index))
+      ..write(AcwwFishData(selected: s));
+      break; }
+      case 'acww_fossil': { await update(acwwFossil)
+      ..where((tbl) => acwwFossil.index.equals(index))
+      ..write(AcwwFossilData(selected: s));
+      break; }
+      case 'acww_furniture': { await update(acwwFurniture)
+      ..where((tbl) => acwwFurniture.index.equals(index))
+      ..write(AcwwFurnitureData(selected: s));
+      break; }
+      case 'acww_gyroid': { await update(acwwGyroid)
+      ..where((tbl) => acwwGyroid.index.equals(index))
+      ..write(AcwwGyroidData(selected: s));
+      break; }
+      case 'acww_insect': { await update(acwwInsect)
+      ..where((tbl) => acwwInsect.index.equals(index))
+      ..write(AcwwInsectData(selected: s));
+      break; }
+      case 'acww_shirt': { await update(acwwShirt)
+      ..where((tbl) => acwwShirt.index.equals(index))
+      ..write(AcwwShirtData(selected: s));
+      break; }
+      case 'acww_song': { await update(acwwSong)
+      ..where((tbl) => acwwSong.index.equals(index))
+      ..write(AcwwSongData(selected: s));
+      break; }
+      case 'acww_stationery': { await update(acwwStationery)
+      ..where((tbl) => acwwStationery.index.equals(index))
+      ..write(AcwwStationeryData(selected: s));
+      break; }
+      case 'acww_tool': { await update(acwwTool)
+      ..where((tbl) => acwwTool.index.equals(index))
+      ..write(AcwwToolData(selected: s));
+      break; }
+      case 'acww_wallpaper': { await update(acwwWallpaper)
+      ..where((tbl) => acwwWallpaper.index.equals(index))
+      ..write(AcwwWallpaperData(selected: s));
+      break; }
+      case 'accf_accessory': { await update(accfAccessory)
+      ..where((tbl) => accfAccessory.index.equals(index))
+      ..write(AccfAccessoryData(selected: s));
+      break; }
+      case 'accf_carpet': { await update(accfCarpet)
+      ..where((tbl) => accfCarpet.index.equals(index))
+      ..write(AccfCarpetData(selected: s));
+      break; }
+      case 'accf_fossil': { await update(accfFossil)
+      ..where((tbl) => accfFossil.index.equals(index))
+      ..write(AccfFossilData(selected: s));
+      break; }
+      case 'accf_fish': { await update(accfFish)
+      ..where((tbl) => accfFish.index.equals(index))
+      ..write(AccfFishData(selected: s));
+      break; }
+      case 'accf_furniture': { await update(accfFurniture)
+      ..where((tbl) => accfFurniture.index.equals(index))
+      ..write(AccfFurnitureData(selected: s));
+      break; }
+      case 'accf_gyroid': { await update(accfGyroid)
+      ..where((tbl) => accfGyroid.index.equals(index))
+      ..write(AccfGyroidData(selected: s));
+      break; }
+      case 'accf_insect': { await update(accfInsect)
+      ..where((tbl) => accfInsect.index.equals(index))
+      ..write(AccfInsectData(selected: s));
+      break; }
+      case 'accf_painting': { await update(accfPainting)
+      ..where((tbl) => accfPainting.index.equals(index))
+      ..write(AccfPaintingData(selected: s));
+      break; }
+      case 'accf_shirt': { await update(accfShirt)
+      ..where((tbl) => accfShirt.index.equals(index))
+      ..write(AccfShirtData(selected: s));
+      break; }
+      case 'accf_song': { await update(accfSong)
+      ..where((tbl) => accfSong.index.equals(index))
+      ..write(AccfSongData(selected: s));
+      break; }
+      case 'accf_stationery': { await update(accfStationery)
+      ..where((tbl) => accfStationery.index.equals(index))
+      ..write(AccfStationeryData(selected: s));
+      break; }
+      case 'accf_tool': { await update(accfTool)
+      ..where((tbl) => accfTool.index.equals(index))
+      ..write(AccfToolData(selected: s));
+      break; }
+      case 'accf_wallpaper': { await update(accfWallpaper)
+      ..where((tbl) => accfWallpaper.index.equals(index))
+      ..write(AccfWallpaperData(selected: s));
+      break; }
+      case 'acnl_accessory': { await update(acnlAccessory)
+      ..where((tbl) => acnlAccessory.index.equals(index))
+      ..write(AcnlAccessoryData(selected: s));
+      break; }
+      case 'acnl_art': { await update(acnlArt)
+      ..where((tbl) => acnlArt.index.equals(index))
+      ..write(AcnlArtData(selected: s));
+      break; }
+      case 'acnl_bottom': { await update(acnlBottom)
+      ..where((tbl) => acnlBottom.index.equals(index))
+      ..write(AcnlBottomData(selected: s));
+      break; }
+      case 'acnl_carpet': { await update(acnlCarpet)
+      ..where((tbl) => acnlCarpet.index.equals(index))
+      ..write(AcnlCarpetData(selected: s));
+      break; }
+      case 'acnl_dlc': { await update(acnlDlc)
+      ..where((tbl) => acnlDlc.index.equals(index))
+      ..write(AcnlDlcData(selected: s));
+      break; }
+      case 'acnl_dress': { await update(acnlDress)
+      ..where((tbl) => acnlDress.index.equals(index))
+      ..write(AcnlDres(selected: s));
+      break; }
+      case 'acnl_feet': { await update(acnlFeet)
+      ..where((tbl) => acnlFeet.index.equals(index))
+      ..write(AcnlFeetData(selected: s));
+      break; }
+      case 'acnl_fish': { await update(acnlFish)
+      ..where((tbl) => acnlFish.index.equals(index))
+      ..write(AcnlFishData(selected: s));
+      break; }
+      case 'acnl_fossil': { await update(acnlFossil)
+      ..where((tbl) => acnlFossil.index.equals(index))
+      ..write(AcnlFossilData(selected: s));
+      break; }
+      case 'acnl_fossil_model': { await update(acnlFossilModel)
+      ..where((tbl) => acnlFossilModel.index.equals(index))
+      ..write(AcnlFossilModelData(selected: s));
+      break; }
+      case 'acnl_furniture': { await update(acnlFurniture)
+      ..where((tbl) => acnlFurniture.index.equals(index))
+      ..write(AcnlFurnitureData(selected: s));
+      break; }
+      case 'acnl_gyroid': { await update(acnlGyroid)
+      ..where((tbl) => acnlGyroid.index.equals(index))
+      ..write(AcnlGyroidData(selected: s));
+      break; }
+      case 'acnl_hat': { await update(acnlHat)
+      ..where((tbl) => acnlHat.index.equals(index))
+      ..write(AcnlHatData(selected: s));
+      break; }
+      case 'acnl_insect': { await update(acnlInsect)
+      ..where((tbl) => acnlInsect.index.equals(index))
+      ..write(AcnlInsectData(selected: s));
+      break; }
+      case 'acnl_music_box': { await update(acnlMusicBox)
+      ..where((tbl) => acnlMusicBox.index.equals(index))
+      ..write(AcnlMusicBoxData(selected: s));
+      break; }
+      case 'acnl_seafood': { await update(acnlSeafood)
+      ..where((tbl) => acnlSeafood.index.equals(index))
+      ..write(AcnlSeafoodData(selected: s));
+      break; }
+      case 'acnl_shirt': { await update(acnlShirt)
+      ..where((tbl) => acnlShirt.index.equals(index))
+      ..write(AcnlShirtData(selected: s));
+      break; }
+      case 'acnl_song': { await update(acnlSong)
+      ..where((tbl) => acnlSong.index.equals(index))
+      ..write(AcnlSongData(selected: s));
+      break; }
+      case 'acnl_stationery': { await update(acnlStationery)
+      ..where((tbl) => acnlStationery.index.equals(index))
+      ..write(AcnlStationeryData(selected: s));
+      break; }
+      case 'acnl_tool': { await update(acnlTool)
+      ..where((tbl) => acnlTool.index.equals(index))
+      ..write(AcnlToolData(selected: s));
+      break; }
+      case 'acnl_villager_picture': { await update(acnlVillagerPicture)
+      ..where((tbl) => acnlVillagerPicture.index.equals(index))
+      ..write(AcnlVillagerPictureData(selected: s));
+      break; }
+      case 'acnl_wallpaper': { await update(acnlWallpaper)
+      ..where((tbl) => acnlWallpaper.index.equals(index))
+      ..write(AcnlWallpaperData(selected: s));
+      break; }
+      case 'acnl_wet_suit': { await update(acnlWetSuit)
+      ..where((tbl) => acnlWetSuit.index.equals(index))
+      ..write(AcnlWetSuitData(selected: s));
+      break; }
+      case 'acnh_accessory': { await update(acnhAccessory)
+      ..where((tbl) => acnhAccessory.index.equals(index))
+      ..write(AcnhAccessoryData(selected: s));
+      break; }
+      case 'acnh_art': { await update(acnhArt)
+      ..where((tbl) => acnhArt.index.equals(index))
+      ..write(AcnhArtData(selected: s));
+      break; }
+      case 'acnh_bag': { await update(acnhBag)
+      ..where((tbl) => acnhBag.index.equals(index))
+      ..write(AcnhBagData(selected: s));
+      break; }
+      case 'acnh_bottom': { await update(acnhBottom)
+      ..where((tbl) => acnhBottom.index.equals(index))
+      ..write(AcnhBottomData(selected: s));
+      break; }
+      case 'acnh_dress': { await update(acnhDress)
+      ..where((tbl) => acnhDress.index.equals(index))
+      ..write(AcnhDres(selected: s));
+      break; }
+      case 'acnh_fencing': { await update(acnhFencing)
+      ..where((tbl) => acnhFencing.index.equals(index))
+      ..write(AcnhFencingData(selected: s));
+      break; }
+      case 'acnh_fish': { await update(acnhFish)
+      ..where((tbl) => acnhFish.index.equals(index))
+      ..write(AcnhFishData(selected: s));
+      break; }
+      case 'acnh_flooring': { await update(acnhFlooring)
+      ..where((tbl) => acnhFlooring.index.equals(index))
+      ..write(AcnhFlooringData(selected: s));
+      break; }
+      case 'acnh_fossil': { await update(acnhFossil)
+      ..where((tbl) => acnhFossil.index.equals(index))
+      ..write(AcnhFossilData(selected: s));
+      break; }
+      case 'acnh_headwear': { await update(acnhHeadwear)
+      ..where((tbl) => acnhHeadwear.index.equals(index))
+      ..write(AcnhHeadwearData(selected: s));
+      break; }
+      case 'acnh_houseware': { await update(acnhHouseware)
+      ..where((tbl) => acnhHouseware.index.equals(index))
+      ..write(AcnhHousewareData(selected: s));
+      break; }
+      case 'acnh_misc': { await update(acnhMisc)
+      ..where((tbl) => acnhMisc.index.equals(index))
+      ..write(AcnhMiscData(selected: s));
+      break; }
+      case 'acnh_wall_mounted': { await update(acnhWallMounted)
+      ..where((tbl) => acnhWallMounted.index.equals(index))
+      ..write(AcnhWallMountedData(selected: s));
+      break; }
+      case 'acnh_ceiling': { await update(acnhCeiling)
+      ..where((tbl) => acnhCeiling.index.equals(index))
+      ..write(AcnhCeilingData(selected: s));
+      break; }
+      case 'acnh_interior': { await update(acnhInterior)
+      ..where((tbl) => acnhInterior.index.equals(index))
+      ..write(AcnhInteriorData(selected: s));
+      break; }
+      case 'acnh_gyroid': { await update(acnhGyroid)
+      ..where((tbl) => acnhGyroid.index.equals(index))
+      ..write(AcnhGyroidData(selected: s));
+      break; }
+      case 'acnh_hybrid': { await update(acnhHybrid)
+      ..where((tbl) => acnhHybrid.index.equals(index))
+      ..write(AcnhHybridData(selected: s));
+      break; }
+      case 'acnh_insect': { await update(acnhInsect)
+      ..where((tbl) => acnhInsect.index.equals(index))
+      ..write(AcnhInsectData(selected: s));
+      break; }
+      case 'acnh_photo': { await update(acnhPhoto)
+      ..where((tbl) => acnhPhoto.index.equals(index))
+      ..write(AcnhPhotoData(selected: s));
+      break; }
+      case 'acnh_poster': { await update(acnhPoster)
+      ..where((tbl) => acnhPoster.index.equals(index))
+      ..write(AcnhPosterData(selected: s));
+      break; }
+      case 'acnh_recipe': { await update(acnhRecipe)
+      ..where((tbl) => acnhRecipe.index.equals(index))
+      ..write(AcnhRecipeData(selected: s));
+      break; }
+      case 'acnh_rug': { await update(acnhRug)
+      ..where((tbl) => acnhRug.index.equals(index))
+      ..write(AcnhRugData(selected: s));
+      break; }
+      case 'acnh_shoe': { await update(acnhShoe)
+      ..where((tbl) => acnhShoe.index.equals(index))
+      ..write(AcnhShoeData(selected: s));
+      break; }
+      case 'acnh_sock': { await update(acnhSock)
+      ..where((tbl) => acnhSock.index.equals(index))
+      ..write(AcnhSockData(selected: s));
+      break; }
+      case 'acnh_song': { await update(acnhSong)
+      ..where((tbl) => acnhSong.index.equals(index))
+      ..write(AcnhSongData(selected: s));
+      break; }
+      case 'acnh_tool': { await update(acnhTool)
+      ..where((tbl) => acnhTool.index.equals(index))
+      ..write(AcnhToolData(selected: s));
+      break; }
+      case 'acnh_top': { await update(acnhTop)
+      ..where((tbl) => acnhTop.index.equals(index))
+      ..write(AcnhTopData(selected: s));
+      break; }
+      case 'acnh_umbrella': { await update(acnhUmbrella)
+      ..where((tbl) => acnhUmbrella.index.equals(index))
+      ..write(AcnhUmbrellaData(selected: s));
+      break; }
+      case 'acnh_wallpaper': { await update(acnhWallpaper)
+      ..where((tbl) => acnhWallpaper.index.equals(index))
+      ..write(AcnhWallpaperData(selected: s));
+      break; }
+      case 'acgc_furniture': { await update(acgcFurniture)
+      ..where((tbl) => acgcFurniture.index.equals(index))
+      ..write(AcgcFurnitureData(selected: s));
+      break; }
+      case 'acnh_other_clothing': { await update(acnhOtherClothing)
+      ..where((tbl) => acnhOtherClothing.index.equals(index))
+      ..write(AcnhOtherClothingData(selected: s));
+      break; }
+      case 'acnh_sea_creature': { await update(acnhSeaCreature)
+      ..where((tbl) => acnhSeaCreature.index.equals(index))
+      ..write(AcnhSeaCreatureData(selected: s));
+      break; }
     }
-    await customStatement('VACUUM INTO ?', [file.path]);
   }
-
-  int boolToInt(bool) {
-    return bool ? 1 : 0;
-  }
-}
-
-LazyDatabase _openConnection() {
-  // the LazyDatabase util lets us find the right location for the file async.
-  return LazyDatabase(() async {
-      // put the database file, called db.sqlite here, into the documents folder
-      // for your app.
-      final dbFolder = await getApplicationDocumentsDirectory();
-      final file = File(p.join(dbFolder.path, 'app.db'));
-
-      if (!await file.exists()) {
-        // Extract the pre-populated database file from assets
-        final blob = await rootBundle.load('assets/acc.db');
-        final buffer = blob.buffer;
-        await file.writeAsBytes(buffer.asUint8List(blob.offsetInBytes, blob.lengthInBytes));
-      }
-
-      return NativeDatabase(file);
-    });
 }

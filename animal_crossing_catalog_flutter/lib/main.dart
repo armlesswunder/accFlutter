@@ -1,6 +1,6 @@
-import 'package:animal_crossing_catalog_flutter/DatabaseHelper.dart';
 import 'package:animal_crossing_catalog_flutter/MyDatabase.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(const MyApp());
@@ -14,7 +14,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Animal Crossing Catalog',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.green,
       ),
       home: const MyHomePage(title: 'Animal Crossing Catalog'),
     );
@@ -30,8 +30,8 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  DataBaseHelper dbHelper = DataBaseHelper();
   MyDatabase? db;
+  SharedPreferences? prefs;
   List<Map<String, dynamic>> masterList = <Map<String, dynamic>>[];
   List<Map<String, dynamic>> displayList = <Map<String, dynamic>>[];
 
@@ -47,9 +47,14 @@ class _MyHomePageState extends State<MyHomePage> {
   List<List<String>> typeTables = <List<String>>[];
   List<String> typeTable = <String>[];
 
-  String game = "acgc_";
-  String gameDisplay = "Gamecube";
-  String type = "carpet";
+  static const String defaultGame = "acnh_";
+  static const String defaultType = "houseware";
+
+  String game = defaultGame;
+  String gameDisplay = "New Horizons";
+  String type = defaultType;
+
+  final TextEditingController _controller = TextEditingController();
 
   @override
   void initState() {
@@ -59,8 +64,25 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void initialLoad() async {
+    await getPrefs();
     await initializeTypes();
     await getData(getTable());
+
+  }
+
+  Future getPrefs() async {
+    prefs = await SharedPreferences.getInstance();
+    game = prefs?.getString("game") ?? defaultGame;
+    type = prefs?.getString("type") ?? defaultType;
+
+    var gameIndex = prefixList.indexOf(game);
+    gameDisplay = gamesList[gameIndex];
+  }
+
+  void setPrefs() async {
+    prefs = await SharedPreferences.getInstance();
+    prefs?.setString("game", game);
+    prefs?.setString("type", type);
   }
 
   String getTable() {
@@ -74,7 +96,7 @@ class _MyHomePageState extends State<MyHomePage> {
     acnlTables = await db!.getTableData('acnl_table');
     acnhTables = await db!.getTableData('acnh_table');
     typeTables = <List<String>>[acgcTables,acwwTables,accfTables,acnlTables,acnhTables];
-    typeTable = acgcTables;
+    typeTable = typeTables[prefixList.indexOf(game)];
   }
 
   Future<void> getData(String table) async {
@@ -100,19 +122,65 @@ class _MyHomePageState extends State<MyHomePage> {
 
     return Scaffold(
         appBar: AppBar(
-          actions: [
-            gameDropDown(),
-            typeDropDown(),
-          ],
+          backgroundColor: const Color.fromARGB(255, 0, 50, 0),
+          toolbarHeight: 0.0,
         ),
         body: Column(
           children: <Widget>[
+            Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      gameDropDown(),
+                      IconButton(
+                        icon: const Icon(Icons.settings),
+                        color: Colors.green,
+                        tooltip: 'Settings',
+                        onPressed: () {
+                          
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      typeDropDown(),
+                      IconButton(
+                        icon: const Icon(Icons.search),
+                        color: Colors.green,
+                        tooltip: 'Filter',
+                        onPressed: () {
+
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
               child: TextField(
+                controller: _controller,
                 onChanged: onSearchChanged,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  hintText: 'Name',
+                  prefixIcon: Icon(Icons.search),
+                  suffixIcon: IconButton(
+                    onPressed: () {
+                      _controller.text = "";
+                      onSearchChanged("");
+                    },
+                    icon: Icon(Icons.clear),
+                  ),
+                  border: InputBorder.none,
                 ),
               ),
             ),
@@ -121,25 +189,34 @@ class _MyHomePageState extends State<MyHomePage> {
               child: ListView.builder(
                   itemCount: displayList.length,
                   itemBuilder: (BuildContext context, int index) {
-                    //return filteredEntries.length < index ? Text('Out of bounds...') : Text('${testText} ${filteredEntries[index]}');
                     return Card(
-                        margin: EdgeInsets.all(4.0),
-                        color: Colors.white,
+                        margin: const EdgeInsets.all(4.0),
+                        color: const Color.fromARGB(240, 255, 255, 255),
                         child: Row(
                           children: [
                             Container(
-                              padding: EdgeInsets.all(8.0),
+                              padding: const EdgeInsets.all(8.0),
                               child: Center(
                                 child: Text(displayList[index]['Name']),
                               ),
                             ),
                             Container(
-                              padding: EdgeInsets.all(8.0),
+                              padding: const EdgeInsets.all(8.0),
                               child: Checkbox(value: displayList[index]['Selected'] == 1,
                                 onChanged: (bool? value) {
                                   db!.updateData(getTable(), displayList[index]['Index'], value!);
                                   displayList[index]['Selected'] = value ? 1 : 0;
                                   setState(() {});
+                                },
+                              ),
+                            ),Container(
+                              padding: const EdgeInsets.all(8.0),
+                              child: IconButton(
+                                icon: const Icon(Icons.info),
+                                color: Colors.green,
+                                tooltip: 'More Info',
+                                onPressed: () {
+                                  showDialog(context: context, builder: (BuildContext context) => getInfoDialog(displayList[index]));
                                 },
                               ),
                             ),
@@ -153,6 +230,30 @@ class _MyHomePageState extends State<MyHomePage> {
         )
     );
   }
+
+
+  Dialog getInfoDialog(Map<String, dynamic> data) {
+
+    var items = <Widget>[];
+
+    for (String key in data.keys) {
+      items.add(Padding(
+        padding:  const EdgeInsets.all(15.0),
+        child: Text('$key: ${data[key]}'),
+      ));
+    }
+
+    return Dialog(
+      elevation: 10,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: items,
+      ),
+    );
+  }
+
 
   Widget gameDropDown() {
     return DropdownButton<String>(
@@ -186,6 +287,7 @@ class _MyHomePageState extends State<MyHomePage> {
               typeTable = acnhTables;
             }
             type = typeTable[0];
+            setPrefs();
             getData(getTable());
       });
 
@@ -194,11 +296,6 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget typeDropDown() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-      decoration: BoxDecoration(
-          color: Colors.white, borderRadius: BorderRadius.circular(10)),
-
-      // dropdown below..
         child: DropdownButton<String>(
             hint: Text(type),
             items: typeTable.map((String value) {
@@ -209,6 +306,7 @@ class _MyHomePageState extends State<MyHomePage> {
             }).toList(),
             onChanged: (s) {
               type = s!;
+              setPrefs();
               getData(getTable());
             }
       ),
