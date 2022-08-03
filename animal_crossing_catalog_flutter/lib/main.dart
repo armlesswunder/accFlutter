@@ -50,9 +50,17 @@ class _MyHomePageState extends State<MyHomePage> {
   static const String defaultGame = "acnh_";
   static const String defaultType = "houseware";
 
+  static const List<String> filterSelectedChoices = ['All Items', 'Unchecked Items', 'Checked Items'];
+
+  static const int FILTER_SELECTED_ALL = 0;
+  static const int FILTER_SELECTED_UNCHECKED = 1;
+  static const int FILTER_SELECTED_CHECKED = 2;
+
   String game = defaultGame;
   String gameDisplay = "New Horizons";
   String type = defaultType;
+
+  int selectedFilter = FILTER_SELECTED_ALL;
 
   final TextEditingController _controller = TextEditingController();
 
@@ -74,6 +82,7 @@ class _MyHomePageState extends State<MyHomePage> {
     prefs = await SharedPreferences.getInstance();
     game = prefs?.getString("game") ?? defaultGame;
     type = prefs?.getString("type") ?? defaultType;
+    selectedFilter = prefs?.getInt("selectedFilter") ?? FILTER_SELECTED_ALL;
 
     var gameIndex = prefixList.indexOf(game);
     gameDisplay = gamesList[gameIndex];
@@ -83,6 +92,7 @@ class _MyHomePageState extends State<MyHomePage> {
     prefs = await SharedPreferences.getInstance();
     prefs?.setString("game", game);
     prefs?.setString("type", type);
+    prefs?.setInt("selectedFilter", selectedFilter);
   }
 
   String getTable() {
@@ -105,14 +115,28 @@ class _MyHomePageState extends State<MyHomePage> {
     displayList.clear();
     masterList.addAll(r);
     displayList.addAll(masterList);
+    filter();
     setState(() {
     });
   }
 
   void onSearchChanged(String text) async {
+    filter(text: text);
+  }
+
+  void filter({String text = ''}) {
     displayList = <Map<String, dynamic>>[];
     for (int i = 0; i < masterList.length; i++) {
-      if (masterList[i]['Name'].toString().toUpperCase().contains(text.toUpperCase())) displayList.add(masterList[i]);
+      if (masterList[i]['Name'].toString().toUpperCase().replaceAll('-', ' ').contains(text.toUpperCase().replaceAll('-', ' '))) displayList.add(masterList[i]);
+    }
+
+    if (selectedFilter > 0) {
+      if (selectedFilter == FILTER_SELECTED_CHECKED) {
+        displayList.removeWhere((element) => element['Selected'] == 0);
+      }
+      else {
+        displayList.removeWhere((element) => element['Selected'] == 1);
+      }
     }
     setState(() {});
   }
@@ -157,7 +181,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         color: Colors.green,
                         tooltip: 'Filter',
                         onPressed: () {
-
+                          showDialog(context: context, builder: (BuildContext context) => getFilterDialog());
                         },
                       ),
                     ],
@@ -172,13 +196,13 @@ class _MyHomePageState extends State<MyHomePage> {
                 onChanged: onSearchChanged,
                 decoration: InputDecoration(
                   hintText: 'Name',
-                  prefixIcon: Icon(Icons.search),
+                  prefixIcon: const Icon(Icons.search),
                   suffixIcon: IconButton(
                     onPressed: () {
                       _controller.text = "";
                       onSearchChanged("");
                     },
-                    icon: Icon(Icons.clear),
+                    icon: const Icon(Icons.clear),
                   ),
                   border: InputBorder.none,
                 ),
@@ -193,31 +217,42 @@ class _MyHomePageState extends State<MyHomePage> {
                         margin: const EdgeInsets.all(4.0),
                         color: const Color.fromARGB(240, 255, 255, 255),
                         child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Container(
+                          Expanded(
+                            flex: 8,
+                            child: Container(
                               padding: const EdgeInsets.all(8.0),
                               child: Center(
                                 child: Text(displayList[index]['Name']),
                               ),
                             ),
-                            Container(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Checkbox(value: displayList[index]['Selected'] == 1,
-                                onChanged: (bool? value) {
-                                  db!.updateData(getTable(), displayList[index]['Index'], value!);
-                                  displayList[index]['Selected'] = value ? 1 : 0;
-                                  setState(() {});
-                                },
+                          ),
+                            Expanded(
+                              flex: 1,
+                              child: Container(
+                                padding: const EdgeInsets.all(8.0),
+                                child: IconButton(
+                                  icon: const Icon(Icons.info),
+                                  color: Colors.green,
+                                  tooltip: 'More Info',
+                                  onPressed: () {
+                                    showDialog(context: context, builder: (BuildContext context) => getInfoDialog(displayList[index]));
+                                  },
+                                ),
                               ),
-                            ),Container(
-                              padding: const EdgeInsets.all(8.0),
-                              child: IconButton(
-                                icon: const Icon(Icons.info),
-                                color: Colors.green,
-                                tooltip: 'More Info',
-                                onPressed: () {
-                                  showDialog(context: context, builder: (BuildContext context) => getInfoDialog(displayList[index]));
-                                },
+                            ),
+                            Expanded(
+                              flex: 1,
+                              child: Container(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Checkbox(value: displayList[index]['Selected'] == 1,
+                                  onChanged: (bool? value) {
+                                    db!.updateData(getTable(), displayList[index]['Index'], value!);
+                                    displayList[index]['Selected'] = value ? 1 : 0;
+                                    setState(() {});
+                                  },
+                                ),
                               ),
                             ),
                           ],
@@ -230,7 +265,6 @@ class _MyHomePageState extends State<MyHomePage> {
         )
     );
   }
-
 
   Dialog getInfoDialog(Map<String, dynamic> data) {
 
@@ -254,6 +288,31 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  Dialog getFilterDialog() {
+    return Dialog(
+      elevation: 10,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+      DropdownButton<String>(
+        hint: Text(filterSelectedChoices[selectedFilter]),
+        items: filterSelectedChoices.map((String value) {
+          return DropdownMenuItem<String>(
+            value: value,
+            child: Text(value),
+          );
+        }).toList(),
+        onChanged: (s) {
+          selectedFilter = filterSelectedChoices.indexOf(s!);
+          setPrefs();
+          filter();
+        }),
+        ],
+      ),
+    );
+  }
 
   Widget gameDropDown() {
     return DropdownButton<String>(
