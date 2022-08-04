@@ -43,9 +43,9 @@ class MyDatabase extends _$MyDatabase {
   Map<String, ResultSetImplementation<dynamic, dynamic>>? tableMap;
   Map<String, TableInfo>? tableInfoMap;
 
-  Future<List<Map<String, dynamic>>> getData(String table) async {
+  Future<List<Map<String, dynamic>>> getData(String game, String type) async {
     var tempArr = <Map<String, dynamic>> [];
-    List<Set<Map<String, dynamic>>> e = await mGetData(table);
+    List<Set<Map<String, dynamic>>> e = await mGetData(game + type);
     for (var e1 in e) {
       try {
         tempArr.add(e1.first);
@@ -55,6 +55,39 @@ class MyDatabase extends _$MyDatabase {
     }
 
     return tempArr;
+  }
+  Future<List<Map<String, dynamic>>> getSeasonalData(String game, String type, String month) async {
+    var tempArr = <Map<String, dynamic>> [];
+    List<Map<String, dynamic>> filteredArr = [];
+    var seasonArr = <Map<String, dynamic>> [];
+    List<Set<Map<String, dynamic>>> e = await mGetData(game + type);
+    for (var e1 in e) {
+      try {
+        tempArr.add(e1.first);
+      } catch (err) {
+        print(err);
+      }
+    }
+
+    e = await mGetSeasonData(game + month + type);
+    for (var e1 in e) {
+      try {
+        seasonArr.add(e1.first);
+      } catch (err) {
+        print(err);
+      }
+    }
+
+    for (Map<String, dynamic> indexObj in seasonArr) {
+      int index = indexObj["id"];
+      for (Map<String, dynamic> data in tempArr) {
+        if (data["Index"] == index) {
+          filteredArr.add(data);
+        }
+      }
+    }
+
+    return filteredArr;
   }
 
   Future<List<String>> getTableData(String table) async {
@@ -74,6 +107,19 @@ class MyDatabase extends _$MyDatabase {
   }
 
   Future<dynamic> mGetData(String table) {
+    if (table == null) {
+      print('Get data called with null table...');
+    }
+
+    return customSelect(
+      'SELECT * FROM $table',
+      readsFrom: {getTable(table)!},
+    ).map((row) => {
+      row.data
+    }).get();
+  }
+
+  Future<dynamic> mGetSeasonData(String table) {
     if (table == null) {
       print('Get data called with null table...');
     }

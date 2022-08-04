@@ -37,6 +37,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
   List<String> prefixList = <String>['acgc_', 'acww_', 'accf_', 'acnl_', 'acnh_'];
   List<String> gamesList = <String>['Gamecube', 'Wild World', 'City Folk', 'New Leaf', 'New Horizons'];
+  List<String> monthDisplay = <String>["(no filter)", "January", "February", "March", "April", "May", "June", "July", "August - 1st Half", "August - 2nd Half", "September - 1st Half", "September - 2nd Half", "October", "November", "December"];
+  List<String> monthValues = <String>["", "jan_", "feb_", "mar_", "apr_", "may_", "jun_", "jul_", "aug1_", "aug2_", "sep1_", "sep2_", "oct_", "nov_", "dec_"];
+  int selectedMonth = 0;
 
   List<String> acgcTables = <String>[];
   List<String> acwwTables = <String>[];
@@ -74,7 +77,7 @@ class _MyHomePageState extends State<MyHomePage> {
   void initialLoad() async {
     await getPrefs();
     await initializeTypes();
-    await getData(getTable());
+    await getData();
 
   }
 
@@ -83,6 +86,7 @@ class _MyHomePageState extends State<MyHomePage> {
     game = prefs?.getString("game") ?? defaultGame;
     type = prefs?.getString("type") ?? defaultType;
     selectedFilter = prefs?.getInt("selectedFilter") ?? FILTER_SELECTED_ALL;
+    selectedMonth = prefs?.getInt("selectedMonth") ?? 0;
 
     var gameIndex = prefixList.indexOf(game);
     gameDisplay = gamesList[gameIndex];
@@ -93,6 +97,7 @@ class _MyHomePageState extends State<MyHomePage> {
     prefs?.setString("game", game);
     prefs?.setString("type", type);
     prefs?.setInt("selectedFilter", selectedFilter);
+    prefs?.setInt("selectedMonth", selectedMonth);
   }
 
   String getTable() {
@@ -109,8 +114,22 @@ class _MyHomePageState extends State<MyHomePage> {
     typeTable = typeTables[prefixList.indexOf(game)];
   }
 
-  Future<void> getData(String table) async {
-    var r = await db!.getData(table);
+  List<String> seasonalTypes = <String> ["sea_creature", "seafood", "fish", "insect"];
+
+  bool isSeasonalType(String table) {
+    for (String type in seasonalTypes) {
+      if (table.contains(type)) return true;
+    }
+    return false;
+  }
+
+  Future<void> getData() async {
+    List<Map<String, dynamic>> r;
+    if (isSeasonalType(type) && selectedMonth > 0) {
+      r = await db!.getSeasonalData(game, type, monthValues[selectedMonth]);
+    } else {
+      r = await db!.getData(game, type);
+    }
     masterList.clear();
     displayList.clear();
     masterList.addAll(r);
@@ -309,6 +328,19 @@ class _MyHomePageState extends State<MyHomePage> {
           setPrefs();
           filter();
         }),
+      DropdownButton<String>(
+          hint: Text(monthDisplay[selectedMonth]),
+          items: monthDisplay.map((String value) {
+            return DropdownMenuItem<String>(
+              value: value,
+              child: Text(value),
+            );
+          }).toList(),
+          onChanged: (s) {
+            selectedMonth = monthDisplay.indexOf(s!);
+            setPrefs();
+            getData();
+          }),
         ],
       ),
     );
@@ -347,7 +379,7 @@ class _MyHomePageState extends State<MyHomePage> {
             }
             type = typeTable[0];
             setPrefs();
-            getData(getTable());
+            getData();
       });
 
 
@@ -366,7 +398,7 @@ class _MyHomePageState extends State<MyHomePage> {
             onChanged: (s) {
               type = s!;
               setPrefs();
-              getData(getTable());
+              getData();
             }
       ),
     );
