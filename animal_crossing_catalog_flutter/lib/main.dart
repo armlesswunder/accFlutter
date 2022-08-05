@@ -62,10 +62,12 @@ class _MyHomePageState extends State<MyHomePage> {
   String game = defaultGame;
   String gameDisplay = "New Horizons";
   String type = defaultType;
+  String from = "";
 
   int selectedFilter = FILTER_SELECTED_ALL;
 
   final TextEditingController _controller = TextEditingController();
+  final TextEditingController _fromController = TextEditingController();
 
   @override
   void initState() {
@@ -134,7 +136,7 @@ class _MyHomePageState extends State<MyHomePage> {
     displayList.clear();
     masterList.addAll(r);
     displayList.addAll(masterList);
-    filter();
+    filter(text: _controller.value.text);
     setState(() {
     });
   }
@@ -143,10 +145,19 @@ class _MyHomePageState extends State<MyHomePage> {
     filter(text: text);
   }
 
+  void onFromSearchChanged(String text) async {
+    from = text;
+    filter(text: _controller.text);
+  }
+
   void filter({String text = ''}) {
     displayList = <Map<String, dynamic>>[];
     for (int i = 0; i < masterList.length; i++) {
-      if (masterList[i]['Name'].toString().toUpperCase().replaceAll('-', ' ').contains(text.toUpperCase().replaceAll('-', ' '))) displayList.add(masterList[i]);
+      if (masterList[i]['Name'].toString().toUpperCase().replaceAll('-', ' ').contains(text.toUpperCase().replaceAll('-', ' '))) {
+        if (masterList[i]['From'] == null || masterList[i]['From'].toString().toUpperCase().replaceAll('-', ' ').contains(from.toUpperCase().replaceAll('-', ' '))) {
+          displayList.add(masterList[i]);
+        }
+      }
     }
 
     if (selectedFilter > 0) {
@@ -290,10 +301,12 @@ class _MyHomePageState extends State<MyHomePage> {
     var items = <Widget>[];
 
     for (String key in data.keys) {
-      items.add(Padding(
-        padding:  const EdgeInsets.all(15.0),
-        child: Text('$key: ${data[key]}'),
-      ));
+      if (!["From", "Index", "Selected"].contains(key)) {
+        items.add(Padding(
+          padding: const EdgeInsets.all(15.0),
+          child: Text('$key: ${data[key]}'),
+        ));
+      }
     }
 
     return Dialog(
@@ -311,38 +324,62 @@ class _MyHomePageState extends State<MyHomePage> {
     return Dialog(
       elevation: 10,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-      DropdownButton<String>(
-        hint: Text(filterSelectedChoices[selectedFilter]),
-        items: filterSelectedChoices.map((String value) {
-          return DropdownMenuItem<String>(
-            value: value,
-            child: Text(value),
-          );
-        }).toList(),
-        onChanged: (s) {
-          selectedFilter = filterSelectedChoices.indexOf(s!);
-          setPrefs();
-          filter();
-        }),
-      DropdownButton<String>(
-          hint: Text(monthDisplay[selectedMonth]),
-          items: monthDisplay.map((String value) {
+      child: StatefulBuilder(builder: (BuildContext context, state) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+        DropdownButton<String>(
+          hint: Text(filterSelectedChoices[selectedFilter]),
+          items: filterSelectedChoices.map((String value) {
             return DropdownMenuItem<String>(
               value: value,
               child: Text(value),
             );
           }).toList(),
           onChanged: (s) {
-            selectedMonth = monthDisplay.indexOf(s!);
+            selectedFilter = filterSelectedChoices.indexOf(s!);
             setPrefs();
-            getData();
+            filter(text: _controller.value.text);
+            state((){});
           }),
-        ],
-      ),
+        DropdownButton<String>(
+            hint: Text(monthDisplay[selectedMonth]),
+            items: monthDisplay.map((String value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(value),
+              );
+            }).toList(),
+            onChanged: (s) {
+              selectedMonth = monthDisplay.indexOf(s!);
+              setPrefs();
+              getData();
+              state((){});
+            }),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+              child: TextField(
+                controller: _fromController,
+                onChanged: onFromSearchChanged,
+                decoration: InputDecoration(
+                  hintText: 'From',
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: IconButton(
+                    onPressed: () {
+                      _fromController.text = "";
+                      onFromSearchChanged("");
+                    },
+                    icon: const Icon(Icons.clear),
+                  ),
+                  border: InputBorder.none,
+                ),
+              ),
+            ),
+          ],
+        );
+      }
+      )
     );
   }
 
@@ -388,18 +425,18 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget typeDropDown() {
     return Container(
         child: DropdownButton<String>(
-            hint: Text(type),
-            items: typeTable.map((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(value),
-              );
-            }).toList(),
-            onChanged: (s) {
-              type = s!;
-              setPrefs();
-              getData();
-            }
+          hint: Text(type.replaceAll('_', ' ')),
+          items: typeTable.map((String value) {
+            return DropdownMenuItem<String>(
+              value: value,
+              child: Text(value.replaceAll('_', ' ')),
+            );
+          }).toList(),
+          onChanged: (s) {
+            type = s!;
+            setPrefs();
+            getData();
+          }
       ),
     );
   }
