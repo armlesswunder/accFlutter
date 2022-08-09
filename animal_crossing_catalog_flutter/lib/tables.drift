@@ -261,3 +261,4 @@ create table acnh_sep2_sea_creature (id int);
 create table acnh_oct_sea_creature (id int);
 create table acnh_nov_sea_creature (id int);
 create table acnh_dec_sea_creature (id int);
+create table preferences (mTableName varchar(127) primary key, SelectedFilter int, "From" varchar (127));

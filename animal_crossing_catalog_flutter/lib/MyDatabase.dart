@@ -79,6 +79,7 @@ class MyDatabase extends _$MyDatabase {
 
     return tempArr;
   }
+  
   Future<List<Map<String, dynamic>>> getSeasonalData(String game, String type, String month, int monthNum, List<String> monthList) async {
     var tempArr = <Map<String, dynamic>> [];
     List<Map<String, dynamic>> filteredArr = [];

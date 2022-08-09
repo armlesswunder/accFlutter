@@ -88,19 +88,12 @@ class _MyHomePageState extends State<MyHomePage> {
     prefs = await SharedPreferences.getInstance();
     game = prefs?.getString("game") ?? defaultGame;
     type = prefs?.getString("type") ?? defaultType;
-    selectedFilter = prefs?.getInt("selectedFilter") ?? FILTER_SELECTED_ALL;
-    selectedMonth = prefs?.getInt("selectedMonth") ?? 0;
+    from = prefs?.getString("${game+type}From") ?? "";
+    selectedFilter = prefs?.getInt("${game+type}SelectedFilter") ?? FILTER_SELECTED_ALL;
+    selectedMonth = prefs?.getInt("${game+type}SelectedMonth") ?? 0;
 
     var gameIndex = prefixList.indexOf(game);
     gameDisplay = gamesList[gameIndex];
-  }
-
-  void setPrefs() async {
-    prefs = await SharedPreferences.getInstance();
-    prefs?.setString("game", game);
-    prefs?.setString("type", type);
-    prefs?.setInt("selectedFilter", selectedFilter);
-    prefs?.setInt("selectedMonth", selectedMonth);
   }
 
   String getTable() {
@@ -128,6 +121,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> getData() async {
     List<Map<String, dynamic>> r;
+    getPrefs();
     if (isSeasonalType(type) && selectedMonth > 0) {
       r = await db!.getSeasonalData(game, type, monthValues[selectedMonth], selectedMonth, monthValues);
     } else {
@@ -365,9 +359,9 @@ class _MyHomePageState extends State<MyHomePage> {
               child: Text(value),
             );
           }).toList(),
-          onChanged: (s) {
+          onChanged: (s) async {
             selectedFilter = filterSelectedChoices.indexOf(s!);
-            setPrefs();
+            await prefs?.setInt("${game+type}SelectedFilter", selectedFilter);
             filter(text: _controller.value.text);
             state((){});
           }),
@@ -379,19 +373,19 @@ class _MyHomePageState extends State<MyHomePage> {
                 child: Text(value),
               );
             }).toList(),
-            onChanged: (s) {
+            onChanged: (s) async {
               selectedMonth = monthDisplay.indexOf(s!);
-              setPrefs();
+              await prefs?.setInt("${game+type}SelectedMonth", selectedMonth);
               getData();
               state((){});
             }),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
               child:  Autocomplete<String>(
-                optionsBuilder: (TextEditingValue textEditingValue) {
-                  //onFromSearchChanged(textEditingValue.text);
+                optionsBuilder: (TextEditingValue textEditingValue) async {
+                  await prefs?.setString("${game+type}From", from);
                   if (textEditingValue.text == '') {
-                    return const Iterable<String>.empty();
+                    return fromList.toSet();
                   }
                   return fromList.where((String option) {
                     return option.toLowerCase().contains(textEditingValue.text.toLowerCase());
@@ -421,8 +415,9 @@ class _MyHomePageState extends State<MyHomePage> {
                     ),
                   );
                 },
-                onSelected: (String selection) {
+                onSelected: (String selection) async {
                   onFromSearchChanged(selection);
+                  await prefs?.setString("${game+type}From", from);
                 },
               )
             ),
@@ -444,7 +439,7 @@ class _MyHomePageState extends State<MyHomePage> {
           child: Text(value),
         );
       }).toList(),
-      onChanged: (s) {
+      onChanged: (s) async {
             if (s == "Gamecube") {
               game = "acgc_";
               gameDisplay = 'Gamecube';
@@ -467,7 +462,8 @@ class _MyHomePageState extends State<MyHomePage> {
               typeTable = acnhTables;
             }
             type = typeTable[0];
-            setPrefs();
+            await prefs?.setString("game", game);
+            await prefs?.setString("type", type);
             getData();
       });
 
@@ -484,9 +480,9 @@ class _MyHomePageState extends State<MyHomePage> {
               child: Text(value.replaceAll('_', ' ')),
             );
           }).toList(),
-          onChanged: (s) {
+          onChanged: (s) async {
             type = s!;
-            setPrefs();
+            await prefs?.setString("type", type);
             getData();
           }
       ),

@@ -56874,6 +56874,230 @@ class AcnhDecSeaCreature extends Table
   bool get dontWriteConstraints => true;
 }
 
+class Preference extends DataClass implements Insertable<Preference> {
+  final String? mTableName;
+  final int? selectedFilter;
+  final String? from;
+  Preference({this.mTableName, this.selectedFilter, this.from});
+  factory Preference.fromData(Map<String, dynamic> data, {String? prefix}) {
+    final effectivePrefix = prefix ?? '';
+    return Preference(
+      mTableName: const StringType()
+          .mapFromDatabaseResponse(data['${effectivePrefix}mTableName']),
+      selectedFilter: const IntType()
+          .mapFromDatabaseResponse(data['${effectivePrefix}SelectedFilter']),
+      from: const StringType()
+          .mapFromDatabaseResponse(data['${effectivePrefix}From']),
+    );
+  }
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (!nullToAbsent || mTableName != null) {
+      map['mTableName'] = Variable<String?>(mTableName);
+    }
+    if (!nullToAbsent || selectedFilter != null) {
+      map['SelectedFilter'] = Variable<int?>(selectedFilter);
+    }
+    if (!nullToAbsent || from != null) {
+      map['From'] = Variable<String?>(from);
+    }
+    return map;
+  }
+
+  PreferencesCompanion toCompanion(bool nullToAbsent) {
+    return PreferencesCompanion(
+      mTableName: mTableName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(mTableName),
+      selectedFilter: selectedFilter == null && nullToAbsent
+          ? const Value.absent()
+          : Value(selectedFilter),
+      from: from == null && nullToAbsent ? const Value.absent() : Value(from),
+    );
+  }
+
+  factory Preference.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Preference(
+      mTableName: serializer.fromJson<String?>(json['mTableName']),
+      selectedFilter: serializer.fromJson<int?>(json['SelectedFilter']),
+      from: serializer.fromJson<String?>(json['From']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'mTableName': serializer.toJson<String?>(mTableName),
+      'SelectedFilter': serializer.toJson<int?>(selectedFilter),
+      'From': serializer.toJson<String?>(from),
+    };
+  }
+
+  Preference copyWith(
+          {String? mTableName, int? selectedFilter, String? from}) =>
+      Preference(
+        mTableName: mTableName ?? this.mTableName,
+        selectedFilter: selectedFilter ?? this.selectedFilter,
+        from: from ?? this.from,
+      );
+  @override
+  String toString() {
+    return (StringBuffer('Preference(')
+          ..write('mTableName: $mTableName, ')
+          ..write('selectedFilter: $selectedFilter, ')
+          ..write('from: $from')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(mTableName, selectedFilter, from);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Preference &&
+          other.mTableName == this.mTableName &&
+          other.selectedFilter == this.selectedFilter &&
+          other.from == this.from);
+}
+
+class PreferencesCompanion extends UpdateCompanion<Preference> {
+  final Value<String?> mTableName;
+  final Value<int?> selectedFilter;
+  final Value<String?> from;
+  const PreferencesCompanion({
+    this.mTableName = const Value.absent(),
+    this.selectedFilter = const Value.absent(),
+    this.from = const Value.absent(),
+  });
+  PreferencesCompanion.insert({
+    this.mTableName = const Value.absent(),
+    this.selectedFilter = const Value.absent(),
+    this.from = const Value.absent(),
+  });
+  static Insertable<Preference> custom({
+    Expression<String?>? mTableName,
+    Expression<int?>? selectedFilter,
+    Expression<String?>? from,
+  }) {
+    return RawValuesInsertable({
+      if (mTableName != null) 'mTableName': mTableName,
+      if (selectedFilter != null) 'SelectedFilter': selectedFilter,
+      if (from != null) 'From': from,
+    });
+  }
+
+  PreferencesCompanion copyWith(
+      {Value<String?>? mTableName,
+      Value<int?>? selectedFilter,
+      Value<String?>? from}) {
+    return PreferencesCompanion(
+      mTableName: mTableName ?? this.mTableName,
+      selectedFilter: selectedFilter ?? this.selectedFilter,
+      from: from ?? this.from,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (mTableName.present) {
+      map['mTableName'] = Variable<String?>(mTableName.value);
+    }
+    if (selectedFilter.present) {
+      map['SelectedFilter'] = Variable<int?>(selectedFilter.value);
+    }
+    if (from.present) {
+      map['From'] = Variable<String?>(from.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PreferencesCompanion(')
+          ..write('mTableName: $mTableName, ')
+          ..write('selectedFilter: $selectedFilter, ')
+          ..write('from: $from')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class Preferences extends Table with TableInfo<Preferences, Preference> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  Preferences(this.attachedDatabase, [this._alias]);
+  final VerificationMeta _mTableNameMeta = const VerificationMeta('mTableName');
+  late final GeneratedColumn<String?> mTableName = GeneratedColumn<String?>(
+      'mTableName', aliasedName, true,
+      type: const StringType(),
+      requiredDuringInsert: false,
+      $customConstraints: 'primary key');
+  final VerificationMeta _selectedFilterMeta =
+      const VerificationMeta('selectedFilter');
+  late final GeneratedColumn<int?> selectedFilter = GeneratedColumn<int?>(
+      'SelectedFilter', aliasedName, true,
+      type: const IntType(),
+      requiredDuringInsert: false,
+      $customConstraints: '');
+  final VerificationMeta _fromMeta = const VerificationMeta('from');
+  late final GeneratedColumn<String?> from = GeneratedColumn<String?>(
+      'From', aliasedName, true,
+      type: const StringType(),
+      requiredDuringInsert: false,
+      $customConstraints: '');
+  @override
+  List<GeneratedColumn> get $columns => [mTableName, selectedFilter, from];
+  @override
+  String get aliasedName => _alias ?? 'preferences';
+  @override
+  String get actualTableName => 'preferences';
+  @override
+  VerificationContext validateIntegrity(Insertable<Preference> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('mTableName')) {
+      context.handle(
+          _mTableNameMeta,
+          mTableName.isAcceptableOrUnknown(
+              data['mTableName']!, _mTableNameMeta));
+    }
+    if (data.containsKey('SelectedFilter')) {
+      context.handle(
+          _selectedFilterMeta,
+          selectedFilter.isAcceptableOrUnknown(
+              data['SelectedFilter']!, _selectedFilterMeta));
+    }
+    if (data.containsKey('From')) {
+      context.handle(
+          _fromMeta, from.isAcceptableOrUnknown(data['From']!, _fromMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {mTableName};
+  @override
+  Preference map(Map<String, dynamic> data, {String? tablePrefix}) {
+    return Preference.fromData(data,
+        prefix: tablePrefix != null ? '$tablePrefix.' : null);
+  }
+
+  @override
+  Preferences createAlias(String alias) {
+    return Preferences(attachedDatabase, alias);
+  }
+
+  @override
+  bool get dontWriteConstraints => true;
+}
+
 abstract class _$MyDatabase extends GeneratedDatabase {
   _$MyDatabase(QueryExecutor e) : super(SqlTypeSystem.defaultInstance, e);
   late final AcgcCarpet acgcCarpet = AcgcCarpet(this);
@@ -57144,6 +57368,7 @@ abstract class _$MyDatabase extends GeneratedDatabase {
   late final AcnhOctSeaCreature acnhOctSeaCreature = AcnhOctSeaCreature(this);
   late final AcnhNovSeaCreature acnhNovSeaCreature = AcnhNovSeaCreature(this);
   late final AcnhDecSeaCreature acnhDecSeaCreature = AcnhDecSeaCreature(this);
+  late final Preferences preferences = Preferences(this);
   @override
   Iterable<TableInfo> get allTables => allSchemaEntities.whereType<TableInfo>();
   @override
@@ -57410,6 +57635,7 @@ abstract class _$MyDatabase extends GeneratedDatabase {
         acnhSep2SeaCreature,
         acnhOctSeaCreature,
         acnhNovSeaCreature,
-        acnhDecSeaCreature
+        acnhDecSeaCreature,
+        preferences
       ];
 }
