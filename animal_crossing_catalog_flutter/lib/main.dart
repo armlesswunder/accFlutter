@@ -49,6 +49,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   List<List<String>> typeTables = <List<String>>[];
   List<String> typeTable = <String>[];
+  List<String> fromList = <String>[];
 
   static const String defaultGame = "acnh_";
   static const String defaultType = "houseware";
@@ -128,14 +129,20 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> getData() async {
     List<Map<String, dynamic>> r;
     if (isSeasonalType(type) && selectedMonth > 0) {
-      r = await db!.getSeasonalData(game, type, monthValues[selectedMonth]);
+      r = await db!.getSeasonalData(game, type, monthValues[selectedMonth], selectedMonth, monthValues);
     } else {
       r = await db!.getData(game, type);
     }
     masterList.clear();
     displayList.clear();
+    fromList.clear();
     masterList.addAll(r);
     displayList.addAll(masterList);
+    for (var data in masterList) {
+      if (data["From"] != null) {
+        fromList.add(data["From"]);
+      }
+    }
     filter(text: _controller.value.text);
     setState(() {
     });
@@ -245,7 +252,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   itemBuilder: (BuildContext context, int index) {
                     return Card(
                         margin: const EdgeInsets.all(4.0),
-                        color: const Color.fromARGB(240, 255, 255, 255),
+                        color: getCardColor(displayList[index]),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -264,7 +271,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                 padding: const EdgeInsets.all(8.0),
                                 child: IconButton(
                                   icon: const Icon(Icons.info),
-                                  color: Colors.green,
+                                  color: getInfoIconColor(displayList[index]['Status']),
                                   tooltip: 'More Info',
                                   onPressed: () {
                                     showDialog(context: context, builder: (BuildContext context) => getInfoDialog(displayList[index]));
@@ -278,7 +285,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                 padding: const EdgeInsets.all(8.0),
                                 child: Checkbox(value: displayList[index]['Selected'] == 1,
                                   onChanged: (bool? value) {
-                                    db!.updateData(getTable(), displayList[index]['Index'], value!);
+                                    db!.updateData(displayList[index]['Type'], displayList[index]['Index'], value!);
                                     displayList[index]['Selected'] = value ? 1 : 0;
                                     setState(() {});
                                   },
@@ -296,12 +303,33 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  Color getCardColor(Map<String, dynamic> data) {
+    if (data["GoneNextMonth"] == true) {
+      return const Color.fromARGB(240, 255, 255, 255);
+    } else if (data["GonePreviousMonth"] == true) {
+      return const Color.fromARGB(204, 127, 255, 133);
+    } else {
+      return data["GoneNextMonth"] == null ? const Color.fromARGB(240, 255, 255, 255) : const Color.fromARGB(205, 255, 118, 118);
+    }
+  }
+
+  Color getInfoIconColor(String? status) {
+    switch(status) {
+      case null:
+        return Colors.black38;
+      case "unorderable":
+        return Colors.orange;
+      default:
+        return Colors.green;
+    }
+  }
+
   Dialog getInfoDialog(Map<String, dynamic> data) {
 
     var items = <Widget>[];
 
     for (String key in data.keys) {
-      if (!["From", "Index", "Selected"].contains(key)) {
+      if (!["Index", "Selected", "Type"].contains(key)) {
         items.add(Padding(
           padding: const EdgeInsets.all(15.0),
           child: Text('$key: ${data[key]}'),
@@ -359,22 +387,44 @@ class _MyHomePageState extends State<MyHomePage> {
             }),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-              child: TextField(
-                controller: _fromController,
-                onChanged: onFromSearchChanged,
-                decoration: InputDecoration(
-                  hintText: 'From',
-                  prefixIcon: const Icon(Icons.search),
-                  suffixIcon: IconButton(
-                    onPressed: () {
-                      _fromController.text = "";
-                      onFromSearchChanged("");
-                    },
-                    icon: const Icon(Icons.clear),
-                  ),
-                  border: InputBorder.none,
-                ),
-              ),
+              child:  Autocomplete<String>(
+                optionsBuilder: (TextEditingValue textEditingValue) {
+                  //onFromSearchChanged(textEditingValue.text);
+                  if (textEditingValue.text == '') {
+                    return const Iterable<String>.empty();
+                  }
+                  return fromList.where((String option) {
+                    return option.toLowerCase().contains(textEditingValue.text.toLowerCase());
+                  }).toSet();
+                },
+                fieldViewBuilder: (
+                    BuildContext context,
+                    TextEditingController fieldTextEditingController,
+                    FocusNode fieldFocusNode,
+                    VoidCallback onFieldSubmitted
+                    ) {
+                  return TextField(
+                    focusNode: fieldFocusNode,
+                    controller: fieldTextEditingController..text = from,
+                    onChanged: onFromSearchChanged,
+                    decoration: InputDecoration(
+                      hintText: 'From',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: IconButton(
+                        onPressed: () {
+                          fieldTextEditingController.text = "";
+                          onFromSearchChanged("");
+                        },
+                        icon: const Icon(Icons.clear),
+                      ),
+                      border: InputBorder.none,
+                    ),
+                  );
+                },
+                onSelected: (String selection) {
+                  onFromSearchChanged(selection);
+                },
+              )
             ),
           ],
         );
@@ -382,6 +432,8 @@ class _MyHomePageState extends State<MyHomePage> {
       )
     );
   }
+
+
 
   Widget gameDropDown() {
     return DropdownButton<String>(

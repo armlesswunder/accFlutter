@@ -7,6 +7,8 @@ import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 
+import 'main.dart';
+
 part 'MyDatabase.g.dart';
 
 
@@ -43,26 +45,48 @@ class MyDatabase extends _$MyDatabase {
   Map<String, ResultSetImplementation<dynamic, dynamic>>? tableMap;
   Map<String, TableInfo>? tableInfoMap;
 
+  Map<String, List<String>> mAllTables = <String, List<String>>{
+    "acgc_all_housewares": ["acgc_furniture", "acgc_carpet", "acgc_wallpaper", "acgc_gyroid"],
+    "acww_all_housewares": ["acww_furniture", "acww_carpet", "acww_wallpaper", "acww_gyroid"],
+    "acww_all_clothing": ["acww_accessory", "acww_shirt"],
+    "accf_all_housewares": ["accf_furniture", "accf_carpet", "accf_wallpaper", "accf_gyroid", "accf_painting"],
+    "accf_all_clothing": ["accf_accessory", "accf_shirt"],
+    "acnl_all_housewares": ["acnl_furniture", "acnl_carpet", "acnl_wallpaper", "acnl_gyroid", "acnl_song"],
+    "acnl_all_clothing": ["acnl_accessory", "acnl_bottom", "acnl_dress", "acnl_feet", "acnl_hat", "acnl_shirt", "acnl_wet_suit"],
+    "acnh_all_housing": ["acnh_houseware", "acnh_misc", "acnh_ceiling", "acnh_interior", "acnh_wall_mounted", "acnh_art", "acnh_flooring", "acnh_rug", "acnh_wallpaper"],
+    "acnh_all_clothing": ["acnh_accessory", "acnh_bag", "acnh_bottom", "acnh_dress", "acnh_headwear", "acnh_shoe", "acnh_sock", "acnh_top", "acnh_other_clothing"],
+  };
+
   Future<List<Map<String, dynamic>>> getData(String game, String type) async {
     var tempArr = <Map<String, dynamic>> [];
-    List<Set<Map<String, dynamic>>> e = await mGetData(game + type);
-    for (var e1 in e) {
-      try {
-        tempArr.add(e1.first);
-      } catch (err) {
-        print(err);
+    String table = game + type;
+    List<String> tables = mAllTables[table] ??= [table];
+    for (String t in tables) {
+      List<Set<Map<String, dynamic>>> e = await mGetData(t);
+      for (var e1 in e) {
+        try {
+          e1.first["Type"] = t;
+          tempArr.add(e1.first);
+        } catch (err) {
+          print(err);
+        }
       }
+    }
+
+    if (table.contains('acnh_') || table.contains('acnl_')) {
+        tempArr.sort((m1, m2) => m1["Name"].compareTo(m2["Name"]));
     }
 
     return tempArr;
   }
-  Future<List<Map<String, dynamic>>> getSeasonalData(String game, String type, String month) async {
+  Future<List<Map<String, dynamic>>> getSeasonalData(String game, String type, String month, int monthNum, List<String> monthList) async {
     var tempArr = <Map<String, dynamic>> [];
     List<Map<String, dynamic>> filteredArr = [];
     var seasonArr = <Map<String, dynamic>> [];
     List<Set<Map<String, dynamic>>> e = await mGetData(game + type);
     for (var e1 in e) {
       try {
+        e1.first["Type"] = game + type;
         tempArr.add(e1.first);
       } catch (err) {
         print(err);
@@ -78,10 +102,56 @@ class MyDatabase extends _$MyDatabase {
       }
     }
 
+    int nextMonthIndex = monthNum + 1;
+    int previousMonthIndex = monthNum - 1;
+
+    if (nextMonthIndex >= monthList.length) {
+      nextMonthIndex = 1;
+    }
+    if (previousMonthIndex < 1) {
+      previousMonthIndex = monthList.length - 1;
+    }
+
+    List<Set<Map<String, dynamic>>> nextMonthData = await mGetData(game + monthList[nextMonthIndex] + type);
+    List<Set<Map<String, dynamic>>> previousMonthData = await mGetData(game + monthList[previousMonthIndex] + type);
+
+    List<int> nextMonthIndexes = [];
+    List<int> previousMonthIndexes = [];
+
+    for (var element1 in nextMonthData) {
+      var l = element1.toList();
+      for (var element2 in l) {
+        var x = element2["id"] ??= -1;
+        nextMonthIndexes.add(x);
+      }
+    }
+    for (var element1 in previousMonthData) {
+      var l = element1.toList();
+      for (var element2 in l) {
+        var x = element2["id"] ??= -1;
+        previousMonthIndexes.add(x);
+      }
+    }
+
     for (Map<String, dynamic> indexObj in seasonArr) {
       int index = indexObj["id"];
       for (Map<String, dynamic> data in tempArr) {
         if (data["Index"] == index) {
+          var x = data["Index"];
+          data["GoneNextMonth"] = false;
+          data["GonePreviousMonth"] = false;
+          for (int i in nextMonthIndexes) {
+            if (i == x) {
+              data["GoneNextMonth"] = true;
+              break;
+            }
+          }
+          for (int i in previousMonthIndexes) {
+            if (i == x) {
+              data["GonePreviousMonth"] = true;
+              break;
+            }
+          }
           filteredArr.add(data);
         }
       }
@@ -101,6 +171,22 @@ class MyDatabase extends _$MyDatabase {
       } catch (err) {
         print(err);
       }
+    }
+
+    if (table == "acgc_table") {
+      tempArr.insert(0, "all_housewares");
+    } else if (table == "acww_table") {
+      tempArr.insert(0, ("all_clothing"));
+      tempArr.insert(0, ("all_housewares"));
+    } else if (table == "accf_table") {
+      tempArr.insert(0, ("all_clothing"));
+      tempArr.insert(0, ("all_housewares"));
+    } else if (table == "acnl_table") {
+      tempArr.insert(0, ("all_clothing"));
+      tempArr.insert(0, ("all_housewares"));
+    } else if (table == "acnh_table") {
+      tempArr.insert(0, ("all_clothing"));
+      tempArr.insert(0, ("all_housing"));
     }
 
     return tempArr;
