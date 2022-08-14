@@ -1,8 +1,58 @@
+import 'dart:async';
+
 import 'package:animal_crossing_catalog_flutter/MyDatabase.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-bool darkMode = false;
+bool darkMode = true;
+
+ThemeData lightTheme = ThemeData(
+    primarySwatch: Colors.green,
+    scaffoldBackgroundColor: Colors.white,
+    dialogBackgroundColor: Colors.white,
+    canvasColor: Colors.white,
+    hintColor: Colors.white70,
+    textTheme: const TextTheme(
+      bodyText1: TextStyle(),
+      bodyText2: TextStyle(),
+      button: TextStyle(),
+    ).apply(
+      bodyColor: Colors.black87,
+      displayColor: Colors.black87,
+    ),
+    inputDecorationTheme: const InputDecorationTheme(
+      filled: true,
+      fillColor: Colors.white10,
+      iconColor: Colors.black87,
+      hintStyle: TextStyle(color: Colors.black87),
+      labelStyle: TextStyle(color: Colors.black87),
+    )
+);
+
+ThemeData darkTheme = ThemeData(
+    primarySwatch: Colors.deepOrange,
+    scaffoldBackgroundColor: Colors.black87,
+    dialogBackgroundColor: Colors.grey,
+    canvasColor: Colors.black,
+    hintColor: Colors.black87,
+    textTheme: const TextTheme(
+      bodyText1: TextStyle(),
+      bodyText2: TextStyle(),
+      button: TextStyle(),
+    ).apply(
+      bodyColor: Colors.white70,
+      displayColor: Colors.white70,
+    ),
+    inputDecorationTheme: const InputDecorationTheme(
+      filled: true,
+      fillColor: Colors.grey,
+      iconColor: Colors.white70,
+      hintStyle: TextStyle(color: Colors.white70),
+      labelStyle: TextStyle(color: Colors.white70),
+    )
+);
+
+final ValueNotifier<ThemeMode> _notifier = ValueNotifier(ThemeMode.light);
 
 void main() {
   runApp(const MyApp());
@@ -13,32 +63,17 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return ValueListenableBuilder<ThemeMode>(
+        valueListenable: _notifier,
+        builder: (_, mode, __) {
     return MaterialApp(
       title: 'Animal Crossing Catalog',
-      theme: ThemeData(
-        primarySwatch: darkMode ? Colors.deepOrange : Colors.green,
-        scaffoldBackgroundColor: darkMode ? Colors.black87:Colors.white,
-        dialogBackgroundColor: darkMode ? const Color(-12632257):Colors.white,
-        canvasColor: darkMode ? const Color(-12632257):Colors.white,
-        hintColor: darkMode ? Colors.black87:Colors.white70,
-        textTheme: const TextTheme(
-          bodyText1: TextStyle(),
-          bodyText2: TextStyle(),
-          button: TextStyle(),
-        ).apply(
-          bodyColor: !darkMode ? Colors.black87:Colors.white70,
-          displayColor: !darkMode ? Colors.black87:Colors.white70,
-        ),
-          inputDecorationTheme: InputDecorationTheme(
-            filled: true,
-            fillColor: darkMode ? const Color(-14935012):Colors.white10,
-            iconColor: !darkMode ? Colors.black87:Colors.white70,
-            hintStyle: TextStyle(color: !darkMode ? Colors.black87:Colors.white70),
-            labelStyle: TextStyle(color: !darkMode ? Colors.black87:Colors.white70),
-          )
-      ),
+      theme: lightTheme,
+      darkTheme: darkTheme,
+      themeMode: mode,
       home: const MyHomePage(title: 'Animal Crossing Catalog'),
     );
+  });
   }
 }
 
@@ -89,7 +124,7 @@ class _MyHomePageState extends State<MyHomePage> {
   int selectedFilter = FILTER_SELECTED_ALL;
 
   final TextEditingController _controller = TextEditingController();
-  final TextEditingController _fromController = TextEditingController();
+  final ScrollController _listController = ScrollController();
 
   bool critterColors = true;
   bool useCurrentDate = true;
@@ -102,10 +137,11 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void initialLoad() async {
+    _listController.addListener(_ScrollPosition);
     await getPrefs();
     await initializeTypes();
     await getData();
-
+    //_notifier.value = ThemeMode.dark;
   }
 
   Future getPrefs() async {
@@ -167,7 +203,17 @@ class _MyHomePageState extends State<MyHomePage> {
       }
     }
     filter(text: _controller.value.text);
+  }
+
+  double cachePosition = 0.0;
+
+  _ScrollPosition() async {
+    cachePosition = _listController.position.pixels;
+  }
+
+  void mSetState() {
     setState(() {
+      Timer(const Duration(milliseconds: 50), () => _listController.jumpTo(cachePosition));
     });
   }
 
@@ -180,7 +226,7 @@ class _MyHomePageState extends State<MyHomePage> {
     filter(text: _controller.text);
   }
 
-  void filter({String text = ''}) {
+  void filter({String text = '', bool resetScroll = true}) {
     displayList = <Map<String, dynamic>>[];
     for (int i = 0; i < masterList.length; i++) {
       if (masterList[i]['Name'].toString().toUpperCase().replaceAll('-', ' ').contains(text.toUpperCase().replaceAll('-', ' '))) {
@@ -198,12 +244,16 @@ class _MyHomePageState extends State<MyHomePage> {
         displayList.removeWhere((element) => element['Selected'] == 1);
       }
     }
-    setState(() {});
+    if (resetScroll) {
+      cachePosition = 0.0;
+    }
+    mSetState();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+     backgroundColor: darkMode ? Colors.black87:Colors.white,
         appBar: AppBar(
           backgroundColor: darkMode ? const Color.fromARGB(255, 0, 0, 0) : const Color.fromARGB(255, 0, 50, 0),
           toolbarHeight: 0.0,
@@ -255,18 +305,19 @@ class _MyHomePageState extends State<MyHomePage> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
               child: TextField(
-                style: TextStyle(color: !darkMode ? Colors.black87:Colors.white70),
+                style: TextStyle(color: darkMode ? Colors.white : Colors.black),
                 controller: _controller,
                 onChanged: onSearchChanged,
                 decoration: InputDecoration(
                   hintText: 'Name',
-                  prefixIcon: const Icon(Icons.search),
+                  hintStyle: TextStyle(color: darkMode ? Colors.white : Colors.black),
+                  prefixIcon: Icon(Icons.search, color: darkMode ? Colors.white : Colors.black,),
                   suffixIcon: IconButton(
                     onPressed: () {
                       _controller.text = "";
                       onSearchChanged("");
                     },
-                    icon: const Icon(Icons.clear),
+                    icon: Icon(Icons.clear, color: darkMode ? Colors.white : Colors.black),
                   ),
                   border: InputBorder.none,
                 ),
@@ -274,7 +325,12 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             Expanded(
               key: UniqueKey(),
-              child: ListView.builder(
+              child: Scrollbar(
+                thumbVisibility: true,
+                thickness: 16.0,
+                controller: _listController,
+                child: ListView.builder(
+                  controller: _listController,
                   itemCount: displayList.length,
                   itemBuilder: (BuildContext context, int index) {
                     return Card(
@@ -310,20 +366,27 @@ class _MyHomePageState extends State<MyHomePage> {
                               flex: 1,
                               child: Container(
                                 padding: const EdgeInsets.all(8.0),
-                                child: Checkbox(
-                                  value: displayList[index]['Selected'] == 1,
-                                  onChanged: (bool? value) {
-                                    db!.updateData(displayList[index]['Type'], displayList[index]['Index'], value!);
-                                    displayList[index]['Selected'] = value ? 1 : 0;
-                                    setState(() {});
-                                  },
-                                ),
+                                child: StatefulBuilder(builder: (BuildContext context, void Function(void Function()) setState) {
+                                  return Checkbox(
+                                    value: displayList[index]['Selected'] == 1,
+                                    onChanged: (bool? value) {
+                                      db!.updateData(displayList[index]['Type'], displayList[index]['Index'], value!);
+                                      displayList[index]['Selected'] = value ? 1 : 0;
+                                      if (selectedFilter != FILTER_SELECTED_ALL) {
+                                        filter(resetScroll: false);
+                                      } else {
+                                        setState((){});
+                                      }
+                                    },
+                                  );
+                                },
+                                )
                               ),
                             ),
                           ],
                         )
                     );
-                  }
+                  }),
               ),
             )
           ],
@@ -332,12 +395,12 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Color getCardColor(Map<String, dynamic> data) {
-    if (data["GoneNextMonth"] == true) {
+    if (data["GoneNextMonth"] == true || data["GoneNextMonth"] == null) {
       return !darkMode ? const Color.fromARGB(240, 255, 255, 255) : const Color.fromARGB(255, 38, 38, 38);
     } else if (data["GonePreviousMonth"] == true) {
-      return const Color.fromARGB(204, 127, 255, 133);
+      return const Color.fromARGB(205, 255, 118, 118);
     } else {
-      return data["GoneNextMonth"] == null ? (darkMode ? const Color.fromARGB(255, 38, 38, 38) : const Color.fromARGB(240, 255, 255, 255)) : const Color.fromARGB(205, 255, 118, 118);
+      return const Color.fromARGB(204, 127, 255, 133);
     }
   }
 
@@ -377,6 +440,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     onChanged: (bool? value) {
                       prefs?.setBool('darkMode', value ??= false);
                       darkMode = value ??= false;
+                      _notifier.value = darkMode ? ThemeMode.dark : ThemeMode.light;
                       state(() {});
                     },
                   )
@@ -447,6 +511,7 @@ class _MyHomePageState extends State<MyHomePage> {
     }
 
     return Dialog(
+      backgroundColor: darkMode ? Colors.black : Colors.white,
       elevation: 10,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
       child: Column(
@@ -459,6 +524,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Dialog getFilterDialog() {
     return Dialog(
+      backgroundColor: darkMode ? Colors.black : Colors.white,
       elevation: 10,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
       child: StatefulBuilder(builder: (BuildContext context, state) {
@@ -467,7 +533,7 @@ class _MyHomePageState extends State<MyHomePage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
         DropdownButton<String>(
-          hint: Text(filterSelectedChoices[selectedFilter], style: TextStyle(color: (darkMode ? Colors.white60 : Colors.black87))),
+          hint: Text(filterSelectedChoices[selectedFilter], style: TextStyle(color: !darkMode ? Colors.black87:Colors.white70)),
           items: filterSelectedChoices.map((String value) {
             return DropdownMenuItem<String>(
               value: value,
@@ -481,7 +547,7 @@ class _MyHomePageState extends State<MyHomePage> {
             state((){});
           }),
         DropdownButton<String>(
-            hint: Text(monthDisplay[selectedMonth], style: TextStyle(color: (darkMode ? Colors.white60 : Colors.black87))),
+            hint: Text(monthDisplay[selectedMonth], style: TextStyle(color: !darkMode ? Colors.black87:Colors.white70)),
             items: monthDisplay.map((String value) {
               return DropdownMenuItem<String>(
                 value: value,
@@ -513,19 +579,21 @@ class _MyHomePageState extends State<MyHomePage> {
                     VoidCallback onFieldSubmitted
                     ) {
                   return TextField(
-                    style: TextStyle(color: !darkMode ? Colors.black87:Colors.white70),
+                    style: TextStyle(color: darkMode ? Colors.white : Colors.black),
                     focusNode: fieldFocusNode,
                     controller: fieldTextEditingController..text = from,
                     onChanged: onFromSearchChanged,
                     decoration: InputDecoration(
                       hintText: 'From',
-                      prefixIcon: const Icon(Icons.search),
+                      hintStyle: TextStyle(color: darkMode ? Colors.white : Colors.black),
+                      prefixIcon: Icon(Icons.search, color: darkMode ? Colors.white : Colors.black),
                       suffixIcon: IconButton(
+                        color: darkMode ? Colors.white : Colors.black,
                         onPressed: () {
                           fieldTextEditingController.text = "";
                           onFromSearchChanged("");
                         },
-                        icon: const Icon(Icons.clear),
+                        icon: Icon(Icons.clear, color: darkMode ? Colors.white : Colors.black),
                       ),
                       border: InputBorder.none,
                     ),
@@ -548,7 +616,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Widget gameDropDown() {
     return DropdownButton<String>(
-          hint: Text(gameDisplay, style: TextStyle(color: (darkMode ? Colors.white60 : Colors.black87))),
+        dropdownColor: darkMode ? const Color(-12632257):Colors.white,
+          hint: Text(gameDisplay, style: TextStyle(color: !darkMode ? Colors.black87:Colors.white70)),
           items: gamesList.map((String value) {
         return DropdownMenuItem<String>(
           value: value,
@@ -589,7 +658,8 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget typeDropDown() {
     return Container(
         child: DropdownButton<String>(
-          hint: Text(type.replaceAll('_', ' '), style: TextStyle(color: (darkMode ? Colors.white60 : Colors.black87))),
+          dropdownColor: darkMode ? const Color(-12632257):Colors.white,
+          hint: Text(type.replaceAll('_', ' '), style: TextStyle(color: !darkMode ? Colors.black87:Colors.white70)),
           items: typeTable.map((String value) {
             return DropdownMenuItem<String>(
               value: value,
