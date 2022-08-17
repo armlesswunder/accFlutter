@@ -275,7 +275,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         onPressed: () {
                           Navigator.push(context, MaterialPageRoute<void>(
                             builder: (BuildContext context) {
-                              return getSettingsScreen();
+                              return Theme(data: darkMode ? darkTheme : lightTheme, child: getSettingsScreen(),);
                             },
                           ));
                         },
@@ -429,7 +429,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 Expanded(
                   flex: 8,
                   child: Padding(
-                    padding: EdgeInsets.all(8.0),
+                    padding: const EdgeInsets.all(8.0),
                     child: Text('Dark Mode: ', style: TextStyle(color: (darkMode ? Colors.white60 : Colors.black87)))
                   ),
                 ),
@@ -442,6 +442,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       darkMode = value ??= false;
                       _notifier.value = darkMode ? ThemeMode.dark : ThemeMode.light;
                       state(() {});
+                      setState(() {});
                     },
                   )
                 )
@@ -464,6 +465,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           prefs?.setBool('useCurrentDate', value ??= true);
                           useCurrentDate = value ??= false;
                           state(() {});
+                          setState(() {});
                         },
                       )
                   )
@@ -486,6 +488,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           prefs?.setBool('critterColors', value ??= false);
                           critterColors = value ??= false;
                           state(() {});
+                          setState(() {});
                         },
                       )
                   )
@@ -533,6 +536,7 @@ class _MyHomePageState extends State<MyHomePage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
         DropdownButton<String>(
+            dropdownColor: darkMode ? const Color(-12632257):Colors.white,
           hint: Text(filterSelectedChoices[selectedFilter], style: TextStyle(color: !darkMode ? Colors.black87:Colors.white70)),
           items: filterSelectedChoices.map((String value) {
             return DropdownMenuItem<String>(
@@ -547,6 +551,7 @@ class _MyHomePageState extends State<MyHomePage> {
             state((){});
           }),
         DropdownButton<String>(
+            dropdownColor: darkMode ? const Color(-12632257):Colors.white,
             hint: Text(monthDisplay[selectedMonth], style: TextStyle(color: !darkMode ? Colors.black87:Colors.white70)),
             items: monthDisplay.map((String value) {
               return DropdownMenuItem<String>(
