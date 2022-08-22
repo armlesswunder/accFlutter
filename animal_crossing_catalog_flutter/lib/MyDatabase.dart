@@ -240,6 +240,84 @@ class MyDatabase extends _$MyDatabase {
     await customStatement('VACUUM INTO ?', [file.path]);
   }
 
+  Future<String> backupData() async {
+    StringBuffer buffer = StringBuffer();
+
+    //buffer += "version=$DB_VERSION;
+
+    //acgc backup
+    for (String table in acgcTables) {
+      var tableName = ("acgc_" + table).replaceAll(" ", "_");
+      if (tableName.contains("_all_")) continue;
+      var backupList = await getBackupData(tableName);
+
+      for (int writeData in backupList) {
+        buffer.writeln("$tableName:$writeData");
+      }
+    }
+    //acww backup
+    for (String table in acwwTables) {
+      var tableName = ("acww_" + table).replaceAll(" ", "_");
+      if (tableName.contains("_all_")) continue;
+      var backupList = await getBackupData(tableName);
+
+      for (int writeData in backupList) {
+        buffer.writeln("$tableName:$writeData");
+      }
+    }
+    //accf backup
+    for (String table in accfTables) {
+      var tableName = ("accf_" + table).replaceAll(" ", "_");
+      if (tableName.contains("_all_")) continue;
+      var backupList = await getBackupData(tableName);
+
+      for (int writeData in backupList) {
+        buffer.writeln("$tableName:$writeData");
+      }
+    }
+    //acnl backup
+    for (String table in acnlTables) {
+      var tableName = ("acnl_" + table).replaceAll(" ", "_");
+      if (tableName.contains("_all_")) continue;
+      var backupList = await getBackupData(tableName);
+
+      for (int writeData in backupList) {
+        buffer.writeln("$tableName:$writeData");
+      }
+    }
+    //acnh backup
+    for (String table in acnhTables) {
+      var tableName = ("acnh_" + table).replaceAll(" ", "_");
+      if (tableName.contains("_all_")) continue;
+      var backupList = await getBackupData(tableName);
+
+      for (int writeData in backupList) {
+        buffer.writeln("$tableName:$writeData");
+      }
+    }
+    var r = buffer.toString();
+    return r;
+  }
+
+  Future<List<int>> getBackupData(String table) async {
+    var myDataset = <int>[];
+    var tempArr = <Map<String, dynamic>>[];
+    List<Set<Map<String, dynamic>>> e = await mGetData(table);
+    for (var e1 in e) {
+      try {
+        tempArr.add(e1.first);
+      } catch (err) {
+        print(err);
+      }
+    }
+    for (Map<String, dynamic> map in tempArr) {
+      if (map['Selected'] == 1) {
+        myDataset.add(map['Index']);
+      }
+    }
+    return myDataset;
+  }
+
   int boolToInt(bool) {
     return bool ? 1 : 0;
   }

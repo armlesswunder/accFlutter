@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:animal_crossing_catalog_flutter/MyDatabase.dart';
 import 'package:flutter/material.dart';
@@ -56,6 +57,12 @@ ThemeData darkTheme = ThemeData(
 
 final ValueNotifier<ThemeMode> _notifier = ValueNotifier(ThemeMode.light);
 
+List<String> acgcTables = <String>[];
+List<String> acwwTables = <String>[];
+List<String> accfTables = <String>[];
+List<String> acnlTables = <String>[];
+List<String> acnhTables = <String>[];
+
 void main() {
   runApp(const MyApp());
 }
@@ -98,12 +105,6 @@ class _MyHomePageState extends State<MyHomePage> {
   List<String> monthDisplay = <String>["(no filter)", "January", "February", "March", "April", "May", "June", "July", "August - 1st Half", "August - 2nd Half", "September - 1st Half", "September - 2nd Half", "October", "November", "December"];
   List<String> monthValues = <String>["", "jan_", "feb_", "mar_", "apr_", "may_", "jun_", "jul_", "aug1_", "aug2_", "sep1_", "sep2_", "oct_", "nov_", "dec_"];
   int selectedMonth = 0;
-
-  List<String> acgcTables = <String>[];
-  List<String> acwwTables = <String>[];
-  List<String> accfTables = <String>[];
-  List<String> acnlTables = <String>[];
-  List<String> acnhTables = <String>[];
 
   List<List<String>> typeTables = <List<String>>[];
   List<String> typeTable = <String>[];
@@ -330,8 +331,8 @@ class _MyHomePageState extends State<MyHomePage> {
             Expanded(
               key: UniqueKey(),
               child: Scrollbar(
-                thumbVisibility: true,
-                thickness: 16.0,
+                thumbVisibility: isMobile() ? false: true,
+                thickness: isMobile() ? 0.0 : 16.0,
                 controller: _listController,
                 child: ListView.builder(
                   controller: _listController,
@@ -529,6 +530,15 @@ class _MyHomePageState extends State<MyHomePage> {
                   )
                 ],
               ),
+              TextButton(onPressed: () async {
+                var s = await db?.backupData();
+                var x = 0;
+              }, child: Text('Export Data', style: TextStyle(color: darkMode ? Colors.white70 : Colors.deepOrange),)
+              ),
+              TextButton(onPressed: () {
+
+              }, child: Text('Import Data', style: TextStyle(color: darkMode ? Colors.white70 : Colors.deepOrange),)
+              )
           ],
         )
       );
@@ -714,5 +724,9 @@ class _MyHomePageState extends State<MyHomePage> {
           }
       ),
     );
+  }
+
+  bool isMobile() {
+    return Platform.isAndroid || Platform.isIOS;
   }
 }
