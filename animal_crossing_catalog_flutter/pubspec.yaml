@@ -53,9 +53,6 @@ dev_dependencies:
   flutter_lints: ^2.0.0
   msix: ^3.6.3
 
-flutter_launcher_name:
-  name: "Animal Crossing Catalog"
-
 flutter_icons:
   android: "launcher_icon"
   ios: true

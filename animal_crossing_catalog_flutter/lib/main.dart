@@ -12,6 +12,7 @@ ThemeData lightTheme = ThemeData(
     dialogBackgroundColor: Colors.white,
     canvasColor: Colors.white,
     hintColor: Colors.white70,
+    unselectedWidgetColor: Colors.black87,
     textTheme: const TextTheme(
       bodyText1: TextStyle(),
       bodyText2: TextStyle(),
@@ -35,6 +36,7 @@ ThemeData darkTheme = ThemeData(
     dialogBackgroundColor: Colors.grey,
     canvasColor: Colors.black,
     hintColor: Colors.black87,
+    unselectedWidgetColor: Colors.white70,
     textTheme: const TextTheme(
       bodyText1: TextStyle(),
       bodyText2: TextStyle(),
@@ -151,7 +153,7 @@ class _MyHomePageState extends State<MyHomePage> {
     from = prefs?.getString("${game+type}From") ?? "";
 
     selectedFilter = prefs?.getInt("${game+type}SelectedFilter") ?? FILTER_SELECTED_ALL;
-    selectedMonth = prefs?.getInt("${game+type}SelectedMonth") ?? 0;
+    selectedMonth = useCurrentDate ? getCurrentMonth() : prefs?.getInt("${game+type}SelectedMonth") ?? 0;
 
     darkMode = prefs?.getBool("darkMode") ?? false;
     critterColors = prefs?.getBool("critterColors") ?? true;
@@ -184,9 +186,11 @@ class _MyHomePageState extends State<MyHomePage> {
     return false;
   }
 
-  Future<void> getData() async {
+  Future<void> getData({bool refreshPrefs = true}) async {
     List<Map<String, dynamic>> r;
-    await getPrefs();
+    if (refreshPrefs) {
+      await getPrefs();
+    }
     if (isSeasonalType(type) && selectedMonth > 0) {
       r = await db!.getSeasonalData(game, type, monthValues[selectedMonth], selectedMonth, monthValues);
     } else {
@@ -367,17 +371,18 @@ class _MyHomePageState extends State<MyHomePage> {
                               child: Container(
                                 padding: const EdgeInsets.all(8.0),
                                 child: StatefulBuilder(builder: (BuildContext context, void Function(void Function()) setState) {
-                                  return Checkbox(
-                                    value: displayList[index]['Selected'] == 1,
-                                    onChanged: (bool? value) {
-                                      db!.updateData(displayList[index]['Type'], displayList[index]['Index'], value!);
-                                      displayList[index]['Selected'] = value ? 1 : 0;
-                                      if (selectedFilter != FILTER_SELECTED_ALL) {
-                                        filter(resetScroll: false);
-                                      } else {
-                                        setState((){});
-                                      }
-                                    },
+                                  return Theme(data: darkMode ? darkTheme : lightTheme, child: Checkbox(
+                                      value: displayList[index]['Selected'] == 1,
+                                      onChanged: (bool? value) {
+                                        db!.updateData(displayList[index]['Type'], displayList[index]['Index'], value!);
+                                        displayList[index]['Selected'] = value ? 1 : 0;
+                                        if (selectedFilter != FILTER_SELECTED_ALL) {
+                                          filter(resetScroll: false);
+                                        } else {
+                                          setState((){});
+                                        }
+                                      },
+                                    )
                                   );
                                 },
                                 )
@@ -394,8 +399,38 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  int getCurrentMonth() {
+    DateTime now = DateTime.now();
+    int month = now.month;
+    int day = now.day;
+    //month++;
+    //august
+    if (month == 8) {
+      if (day > 15) {
+        month++;
+      }
+    } else if (month == 9) {
+      month++;
+      if (day > 15) {
+        month++;
+      }
+    } else if (month > 9) {
+      month += 2;
+    }
+    return month;
+    /*
+    if (useCurrentSeason) {
+      seasonIndex = thisSeason
+      selectedSeasonIndex = seasonIndex
+    }
+    else {
+      seasonIndex = selectedSeasonIndex
+    }
+     */
+  }
+
   Color getCardColor(Map<String, dynamic> data) {
-    if (data["GoneNextMonth"] == true || data["GoneNextMonth"] == null) {
+    if (!critterColors || data["GoneNextMonth"] == true || data["GoneNextMonth"] == null) {
       return !darkMode ? const Color.fromARGB(240, 255, 255, 255) : const Color.fromARGB(255, 38, 38, 38);
     } else if (data["GonePreviousMonth"] == true) {
       return const Color.fromARGB(205, 255, 118, 118);
@@ -505,7 +540,7 @@ class _MyHomePageState extends State<MyHomePage> {
     var items = <Widget>[];
 
     for (String key in data.keys) {
-      if (!["Index", "Selected", "Type"].contains(key)) {
+      if (!["Index", "Selected", "Type", "GonePreviousMonth", "GoneNextMonth"].contains(key)) {
         items.add(Padding(
           padding: const EdgeInsets.all(15.0),
           child: Text('$key: ${data[key]}', style: TextStyle(color: (darkMode ? Colors.white60 : Colors.black87))),
@@ -550,21 +585,24 @@ class _MyHomePageState extends State<MyHomePage> {
             filter(text: _controller.value.text);
             state((){});
           }),
-        DropdownButton<String>(
-            dropdownColor: darkMode ? const Color(-12632257):Colors.white,
-            hint: Text(monthDisplay[selectedMonth], style: TextStyle(color: !darkMode ? Colors.black87:Colors.white70)),
-            items: monthDisplay.map((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(value, style: TextStyle(color: (darkMode ? Colors.white60 : Colors.black87))),
-              );
-            }).toList(),
-            onChanged: (s) async {
-              selectedMonth = monthDisplay.indexOf(s!);
-              await prefs?.setInt("${game+type}SelectedMonth", selectedMonth);
-              getData();
-              state((){});
-            }),
+          Visibility(
+            visible: isSeasonalType(type),
+            child: DropdownButton<String>(
+              dropdownColor: darkMode ? const Color(-12632257):Colors.white,
+              hint: Text(monthDisplay[selectedMonth], style: TextStyle(color: !darkMode ? Colors.black87:Colors.white70)),
+              items: monthDisplay.map((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value, style: TextStyle(color: (darkMode ? Colors.white60 : Colors.black87))),
+                );
+              }).toList(),
+              onChanged: (s) async {
+                selectedMonth = monthDisplay.indexOf(s!);
+                await prefs?.setInt("${game+type}SelectedMonth", selectedMonth);
+                getData(refreshPrefs: !useCurrentDate);
+                state((){});
+              }),
+          ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
               child:  Autocomplete<String>(
@@ -616,8 +654,6 @@ class _MyHomePageState extends State<MyHomePage> {
       )
     );
   }
-
-
 
   Widget gameDropDown() {
     return DropdownButton<String>(
