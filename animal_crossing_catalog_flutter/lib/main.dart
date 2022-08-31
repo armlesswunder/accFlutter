@@ -1,8 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:animal_crossing_catalog_flutter/MyDatabase.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 bool darkMode = true;
@@ -532,11 +536,13 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               TextButton(onPressed: () async {
                 var s = await db?.backupData();
-                var x = 0;
+                if (s != null) {
+                  saveFile(s);
+                }
               }, child: Text('Export Data', style: TextStyle(color: darkMode ? Colors.white70 : Colors.deepOrange),)
               ),
               TextButton(onPressed: () {
-
+                openFile();
               }, child: Text('Import Data', style: TextStyle(color: darkMode ? Colors.white70 : Colors.deepOrange),)
               )
           ],
@@ -724,6 +730,77 @@ class _MyHomePageState extends State<MyHomePage> {
           }
       ),
     );
+  }
+
+  Future<void> saveFile(String data) async {
+    String timestamp = '';
+    DateTime d = DateTime.now();
+    timestamp = '${d.year}${d.month}${d.day}:${d.hour}:${d.minute}:${d.second}';
+    String filePath = '';
+
+    if (Platform.isAndroid) {
+      final directory = await getApplicationDocumentsDirectory();
+      var d = Directory(directory.path);
+      var c = await d.exists();
+      if (!c) {
+        await d.create();
+      }
+      File file = File(d.path + '/acc$timestamp.acb');
+      await writeFile(file.path, data);
+
+      await Share.shareFiles([file.path], text: 'Export Backup');
+      file.deleteSync();
+    } else {
+      final documentsDir = await getApplicationDocumentsDirectory();
+      var result = await FilePicker.platform.saveFile(initialDirectory: documentsDir.path);
+      if (result != null) {
+        filePath = result;
+        File file = File(filePath);
+        await file.create();
+        await file.writeAsString(data);
+        SnackBar(content: Text('Saved file: $filePath'),);
+      }
+    }
+  }
+
+  void openFile() async {
+    final documentsDir = await getApplicationDocumentsDirectory();
+    FilePickerResult? result = await FilePicker.platform.pickFiles(initialDirectory: documentsDir.path);
+    if (result != null) {
+      String? path = result.files.single.path;
+      await loadFile(path!);
+      initialLoad();
+    } else {
+      // User canceled the picker
+    }
+  }
+
+  Future loadFile(String path) async {
+    if (path.isEmpty) return;
+    try {
+      File file = File(path);
+      var s = file.openRead().map(utf8.decode);
+      var str = '';
+      await s.forEach((element) {
+        str += element;
+      });
+      var dataList = str.split('\n');
+      for(int i = 0; i < dataList.length; i++) {
+        var element = dataList[i];
+        if (element.trim().isEmpty || !element.contains(':')) continue;
+        var arr = element.split(':');
+        var table = arr[0];
+        var index = arr[1];
+        db?.updateData(table, int.parse(index), true);
+      }
+    } catch (err) {
+      print(err);
+    }
+  }
+
+  Future writeFile(String path, String data) {
+    File file = File(path);
+    return file.writeAsString(data);
   }
 
   bool isMobile() {
