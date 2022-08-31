@@ -102,7 +102,7 @@ If you want to import data from android (legacy) acc, you will need to use an ex
 In general: Execute the entire file (minus the header if applicable) and write changes. Don't ask me how to use any external applications, I'm not your personal tech support guy.
 
 ### Save app state
-Create a backup of your checklist data.
+Create a backup of your checklist data. You'll need an app to share the data to on mobile. On android I use google drive. Don't ask me to find a file sharing app for you.
 
 ### Guide
 Brings you here!

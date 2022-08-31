@@ -738,7 +738,7 @@ class _MyHomePageState extends State<MyHomePage> {
     timestamp = '${d.year}${d.month}${d.day}:${d.hour}:${d.minute}:${d.second}';
     String filePath = '';
 
-    if (Platform.isAndroid) {
+    if (isMobile()) {
       final directory = await getApplicationDocumentsDirectory();
       var d = Directory(directory.path);
       var c = await d.exists();
@@ -747,8 +747,7 @@ class _MyHomePageState extends State<MyHomePage> {
       }
       File file = File(d.path + '/acc$timestamp.acb');
       await writeFile(file.path, data);
-
-      await Share.shareFiles([file.path], text: 'Export Backup');
+      await Share.shareFiles([file.path], text: data);
       file.deleteSync();
     } else {
       final documentsDir = await getApplicationDocumentsDirectory();
