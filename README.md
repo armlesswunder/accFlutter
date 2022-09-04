@@ -3,7 +3,21 @@ Animal Crossing Catalog built for Android, iOS, and Windows
 
 Contact: abw4v.dev@gmail.com
 
+# Download
+
+## Android and Windows
+https://github.com/armlesswunder/accFlutter/releases
+
+I will post the android app in play store as a replacement for my existing (legacy) animal crossing catalog app
+
+## iOS 
+I have a working version of iOS that is not currently released due to Apple's aggresive monetization policies for app store. You can install the iOS app by downloading this repo and installing via XCode if you wish. 
+
+Please help me raise money if you wish for an official iOS release. Thank you in advance! (email me for details)
+
 # News
+
+9/4/2022: Initial Release for Android and Windows.
 
 8/31/2022: Started working on an initial release for this application. The app is feature complete
 
@@ -34,9 +48,7 @@ Use the searchbar to search for items by name.
 When you type into the searchbar, all items with names that do not include the text you typed are excluded from your list. There is no search button, everything happens as you are typing so that this is a quick process. Searchbar works in conjucnction with all filter choices as well.
 
 ## Filter
-Appears on the top right of top bar. Pressing this opens a dialog with several options so that you can filter which items appear in the item list.
-
-![picture](Images/FilterIndex.png)
+Appears on the top left of top bar. Pressing this opens a dialog with several options so that you can filter which items appear in the item list.
 
 1) Month
 2) View
@@ -76,7 +88,7 @@ Different colors indicate catalog status:
 Check items off your list. Your selection is saved as soon as you do it.
 
 ## Settings
-Run-of-the-Mill app settings
+Run-of-the-Mill app settings, top-right
 
 1) Use current date
 2) Critter warning colors
@@ -118,6 +130,6 @@ If you post negative reviews because you haven't tested this feature, please rem
 ## Q: This app has way to many items, it would be so much easier to find what I am looking for if there was some way to filter items.
 
 A: There is no lack of filtering options in this app. Learn to use the searchbar, filter settings, and month settings for critters.
-https://github.com/armlesswunder/android_ac_catalog/blob/master/README.md#searchbar
-https://github.com/armlesswunder/android_ac_catalog/blob/master/README.md#filter-magnifying-glass
-https://github.com/armlesswunder/android_ac_catalog/blob/master/README.md#month
+https://github.com/armlesswunder/accFlutter#searchbar
+https://github.com/armlesswunder/accFlutter#filter
+https://github.com/armlesswunder/accFlutter#month
