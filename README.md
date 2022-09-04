@@ -17,6 +17,11 @@ Please help me raise money if you wish for an official iOS release OR host the a
 
 NOTE: Donations will not guarantee you anything at all including releases, bug fixes, or new features. You donate out of pure goodwill to me as a way of saying "thank you for your free and public works." I will consider using sufficient funds acquired via donation only to host, develop, and distribute applications and mods. Email me with any concerns.
 
+## MacOS or Linux
+If anyone out there legitimatly wants this app on MacOS, email me and I'll consider doing a release. 
+
+If you want Linux... well... I can see about doing it, but no promises, as I don't currently have a linux machine, nor do I have any desire to see this application come to that platform.
+
 # Donate
 https://www.gofundme.com/f/armlesswunders-dev-donations?utm_campaign=p_cp+share-sheet&utm_medium=copy_link_all&utm_source=customer
 
