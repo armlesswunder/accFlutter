@@ -11,9 +11,14 @@ https://github.com/armlesswunder/accFlutter/releases
 I will post the android app in play store as a replacement for my existing (legacy) animal crossing catalog app
 
 ## iOS 
-I have a working version of iOS that is not currently released due to Apple's aggresive monetization policies for app store. You can install the iOS app by downloading this repo and installing via XCode if you wish. 
+I have a working version of iOS that is not currently released due to Apple's aggresive monetization policies for app store (100$ per year). You can install the iOS app by downloading this repo and installing via XCode if you wish. 
 
-Please help me raise money if you wish for an official iOS release. Thank you in advance! (email me for details)
+Please help me raise money if you wish for an official iOS release OR host the app using your own dev account. Email me for details. Thank you in advance! 
+
+NOTE: Donations will not guarantee you anything at all including releases, bug fixes, or new features. You donate out of pure goodwill to me as a way of saying "thank you for your free and public works." I will consider using sufficient funds to host, develop, and distribute applications and mods. Email me with any concerns.
+
+# Donate
+https://www.gofundme.com/f/armlesswunders-dev-donations?utm_campaign=p_cp+share-sheet&utm_medium=copy_link_all&utm_source=customer
 
 # News
 
