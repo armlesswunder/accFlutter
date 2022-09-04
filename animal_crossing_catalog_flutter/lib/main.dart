@@ -8,6 +8,11 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+const guideURL = "https://github.com/armlesswunder/android_ac_catalog/blob/master/README.md#guide";
+const faqURL = "https://github.com/armlesswunder/android_ac_catalog/blob/master/README.md#faq";
+const mySiteURL = "https://armlesswunder.github.io/";
 
 bool darkMode = true;
 
@@ -134,7 +139,7 @@ class _MyHomePageState extends State<MyHomePage> {
   final ScrollController _listController = ScrollController();
 
   bool critterColors = true;
-  bool useCurrentDate = true;
+  bool useCurrentDate = false;
 
   @override
   void initState() {
@@ -148,6 +153,7 @@ class _MyHomePageState extends State<MyHomePage> {
     await getPrefs();
     await initializeTypes();
     await getData();
+    clearCache();
     //_notifier.value = ThemeMode.dark;
   }
 
@@ -162,7 +168,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
     darkMode = prefs?.getBool("darkMode") ?? false;
     critterColors = prefs?.getBool("critterColors") ?? true;
-    useCurrentDate = prefs?.getBool("useCurrentDate") ?? true;
+    useCurrentDate = prefs?.getBool("useCurrentDate") ?? false;
 
     var gameIndex = prefixList.indexOf(game);
     gameDisplay = gamesList[gameIndex];
@@ -544,7 +550,19 @@ class _MyHomePageState extends State<MyHomePage> {
               TextButton(onPressed: () {
                 openFile();
               }, child: Text('Import Data', style: TextStyle(color: darkMode ? Colors.white70 : Colors.deepOrange),)
-              )
+              ),
+              TextButton(onPressed: ()  {
+                openURL(Uri.parse(guideURL));
+              }, child: Text('Guide', style: TextStyle(color: Colors.green),)
+              ),
+              TextButton(onPressed: () {
+                openURL(Uri.parse(faqURL));
+              }, child: Text('FAQ', style: TextStyle(color: Colors.green),)
+              ),
+              TextButton(onPressed: () {
+                openURL(Uri.parse(mySiteURL));
+              }, child: Text('My Site', style: TextStyle(color: darkMode ? Colors.white70 : Colors.deepOrange),)
+              ),
           ],
         )
       );
@@ -733,9 +751,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> saveFile(String data) async {
-    String timestamp = '';
-    DateTime d = DateTime.now();
-    timestamp = '${d.year}${d.month}${d.day}:${d.hour}:${d.minute}:${d.second}';
+    String timestamp = getTimestamp();
     String filePath = '';
 
     if (isMobile()) {
@@ -747,8 +763,7 @@ class _MyHomePageState extends State<MyHomePage> {
       }
       File file = File(d.path + '/acc$timestamp.acb');
       await writeFile(file.path, data);
-      await Share.shareFiles([file.path], text: data);
-      file.deleteSync();
+      await Share.shareFiles([file.path]);
     } else {
       final documentsDir = await getApplicationDocumentsDirectory();
       var result = await FilePicker.platform.saveFile(initialDirectory: documentsDir.path);
@@ -758,6 +773,41 @@ class _MyHomePageState extends State<MyHomePage> {
         await file.create();
         await file.writeAsString(data);
         SnackBar(content: Text('Saved file: $filePath'),);
+      }
+    }
+  }
+
+  String getTimestamp() {
+    DateTime d = DateTime.now();
+    var y = d.year;
+    var m = d.month.toString().padLeft(2, '0');
+    var dd = d.day.toString().padLeft(2, '0');
+    var h = d.hour.toString().padLeft(2, '0');
+    var mm = d.minute.toString().padLeft(2, '0');
+    var s = d.second.toString().padLeft(2, '0');
+    return '$y$m$dd$h$mm$s';
+  }
+
+  void openURL(Uri url) async {
+    try {
+      await launchUrl(url);
+    } catch(err) {
+      print(err);
+    }
+  }
+
+  Future clearCache() async {
+    final directory = await getApplicationDocumentsDirectory();
+    var d = Directory(directory.path);
+    var c = await d.exists();
+    if (!c) {
+      await d.create();
+    }
+    var fileList = d.listSync();
+    for (var element in fileList) {
+      var s = element.path;
+      if (s.endsWith('.acb')) {
+        File(s).deleteSync();
       }
     }
   }
