@@ -139,17 +139,17 @@ class MyDatabase extends _$MyDatabase {
       for (Map<String, dynamic> data in tempArr) {
         if (data["Index"] == index) {
           var x = data["Index"];
-          data["GoneNextMonth"] = false;
-          data["GonePreviousMonth"] = false;
+          data["PresentNextMonth"] = false;
+          data["PresentPreviousMonth"] = false;
           for (int i in nextMonthIndexes) {
             if (i == x) {
-              data["GoneNextMonth"] = true;
+              data["PresentNextMonth"] = true;
               break;
             }
           }
           for (int i in previousMonthIndexes) {
             if (i == x) {
-              data["GonePreviousMonth"] = true;
+              data["PresentPreviousMonth"] = true;
               break;
             }
           }

@@ -5,13 +5,14 @@ import 'dart:io';
 import 'package:animal_crossing_catalog_flutter/MyDatabase.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-const guideURL = "https://github.com/armlesswunder/android_ac_catalog/blob/master/README.md#guide";
-const faqURL = "https://github.com/armlesswunder/android_ac_catalog/blob/master/README.md#faq";
+const guideURL = "https://github.com/armlesswunder/accFlutter#guide";
+const faqURL = "https://github.com/armlesswunder/accFlutter#faq";
 const mySiteURL = "https://armlesswunder.github.io/";
 
 bool darkMode = true;
@@ -132,6 +133,7 @@ class _MyHomePageState extends State<MyHomePage> {
   String gameDisplay = "New Horizons";
   String type = defaultType;
   String from = "";
+  String versionStr = '[Unknown Version]';
 
   int selectedFilter = FILTER_SELECTED_ALL;
 
@@ -153,6 +155,7 @@ class _MyHomePageState extends State<MyHomePage> {
     await getPrefs();
     await initializeTypes();
     await getData();
+    getVersion();
     clearCache();
     //_notifier.value = ThemeMode.dark;
   }
@@ -176,6 +179,13 @@ class _MyHomePageState extends State<MyHomePage> {
 
   String getTable() {
     return game + type;
+  }
+
+  void getVersion() async {
+    PackageInfo packageInfo = await PackageInfo.fromPlatform();
+    String version = packageInfo.version;
+    String code = packageInfo.buildNumber;
+    versionStr = '$version ($code)';
   }
 
   Future<void> initializeTypes() async {
@@ -355,18 +365,20 @@ class _MyHomePageState extends State<MyHomePage> {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                           Expanded(
-                            flex: 8,
+                            flex: isMobile() ? 70 : 80,
                             child: Container(
                               padding: const EdgeInsets.all(8.0),
                               child: Center(
-                                child: Text(displayList[index]['Name'], style: TextStyle(color: (darkMode ? Colors.white60 : Colors.black87))),
+                                child: Text(displayList[index]['Name'],
+                                  style: TextStyle(color: (darkMode ? Colors.white60 : Colors.black87)),
+                                  textAlign: TextAlign.center,),
                               ),
                             ),
                           ),
                             Expanded(
-                              flex: 1,
+                              flex: isMobile() ? 10 : 10,
                               child: Container(
-                                padding: const EdgeInsets.all(8.0),
+                                padding: const EdgeInsets.only(right: 8.0),
                                 child: IconButton(
                                   icon: const Icon(Icons.info),
                                   color: getInfoIconColor(displayList[index]['Status']),
@@ -378,7 +390,7 @@ class _MyHomePageState extends State<MyHomePage> {
                               ),
                             ),
                             Expanded(
-                              flex: 1,
+                              flex: isMobile() ? 20 : 10,
                               child: Container(
                                 padding: const EdgeInsets.all(8.0),
                                 child: StatefulBuilder(builder: (BuildContext context, void Function(void Function()) setState) {
@@ -441,12 +453,15 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Color getCardColor(Map<String, dynamic> data) {
-    if (!critterColors || data["GoneNextMonth"] == true || data["GoneNextMonth"] == null) {
-      return !darkMode ? const Color.fromARGB(240, 255, 255, 255) : const Color.fromARGB(255, 38, 38, 38);
-    } else if (data["GonePreviousMonth"] == true) {
-      return const Color.fromARGB(205, 255, 118, 118);
+    var basicColor = !darkMode ? const Color.fromARGB(240, 255, 255, 255) : const Color.fromARGB(255, 38, 38, 38);
+    if (!critterColors || data["PresentNextMonth"] == null) {
+      return basicColor;
+    } else if (data["PresentNextMonth"] == false) {
+      return const Color.fromARGB(128, 255, 118, 118);
+    } else if (data["PresentPreviousMonth"] == false) {
+      return const Color.fromARGB(128, 127, 255, 133);
     } else {
-      return const Color.fromARGB(204, 127, 255, 133);
+      return basicColor;
     }
   }
 
@@ -466,7 +481,9 @@ class _MyHomePageState extends State<MyHomePage> {
       return Scaffold(
           appBar: AppBar(
             backgroundColor: (darkMode ? Colors.white10 : Colors.green),
-            title: Text('Settings', style: TextStyle(color: (darkMode ? Colors.white60 : Colors.white70))),
+            title: Text('Settings',
+              style: TextStyle(color: (darkMode ? Colors.white60 : Colors.white70)),
+            ),
           ),
           body: Column(
             children: [
@@ -476,7 +493,9 @@ class _MyHomePageState extends State<MyHomePage> {
                   flex: 8,
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
-                    child: Text('Dark Mode: ', style: TextStyle(color: (darkMode ? Colors.white60 : Colors.black87)))
+                    child: Text('Dark Mode: ',
+                      style: TextStyle(color: (darkMode ? Colors.white60 : Colors.black87)),
+                    )
                   ),
                 ),
                 Expanded(
@@ -500,7 +519,9 @@ class _MyHomePageState extends State<MyHomePage> {
                     flex: 8,
                     child: Padding(
                         padding: const EdgeInsets.all(8.0),
-                        child: Text('Use Current Date: ', style: TextStyle(color: (darkMode ? Colors.white60 : Colors.black87)))
+                        child: Text('Use Current Date: ',
+                          style: TextStyle(color: (darkMode ? Colors.white60 : Colors.black87)),
+                        )
                     ),
                   ),
                   Expanded(
@@ -523,7 +544,9 @@ class _MyHomePageState extends State<MyHomePage> {
                     flex: 8,
                     child: Padding(
                         padding: EdgeInsets.all(8.0),
-                        child: Text('Critter Warning Colors: ', style: TextStyle(color: (darkMode ? Colors.white60 : Colors.black87)))
+                        child: Text('Critter Warning Colors: ',
+                          style: TextStyle(color: (darkMode ? Colors.white60 : Colors.black87)),
+                        )
                     ),
                   ),
                   Expanded(
@@ -545,28 +568,98 @@ class _MyHomePageState extends State<MyHomePage> {
                 if (s != null) {
                   saveFile(s);
                 }
-              }, child: Text('Export Data', style: TextStyle(color: darkMode ? Colors.white70 : Colors.deepOrange),)
+              }, child: Text('Export Data',
+                style: TextStyle(color: darkMode ? Colors.white70 : Colors.deepOrange),
+                textAlign: TextAlign.center,)
               ),
               TextButton(onPressed: () {
                 openFile();
-              }, child: Text('Import Data', style: TextStyle(color: darkMode ? Colors.white70 : Colors.deepOrange),)
+              }, child: Text('Import Data',
+                style: TextStyle(color: darkMode ? Colors.white70 : Colors.deepOrange),
+                textAlign: TextAlign.center,)
               ),
               TextButton(onPressed: ()  {
                 openURL(Uri.parse(guideURL));
-              }, child: Text('Guide', style: TextStyle(color: Colors.green),)
+              }, child: const Text('Guide',
+                style: TextStyle(color: Colors.green),
+                textAlign: TextAlign.center,)
               ),
               TextButton(onPressed: () {
                 openURL(Uri.parse(faqURL));
-              }, child: Text('FAQ', style: TextStyle(color: Colors.green),)
+              }, child: const Text('FAQ',
+                style: TextStyle(color: Colors.green),
+                textAlign: TextAlign.center,)
               ),
               TextButton(onPressed: () {
                 openURL(Uri.parse(mySiteURL));
-              }, child: Text('My Site', style: TextStyle(color: darkMode ? Colors.white70 : Colors.deepOrange),)
+              }, child: Text('My Site',
+                style: TextStyle(color: darkMode ? Colors.white70 : Colors.deepOrange),
+                textAlign: TextAlign.center,)
               ),
+              TextButton(onPressed: ()  {
+                showDialog(context: context, builder: (BuildContext context) => getProgressDialog());
+              }, child: Text('Progress',
+                style: TextStyle(color: darkMode ? Colors.white70 : Colors.deepOrange),
+                textAlign: TextAlign.center,)
+              ),
+              Text('Version: $versionStr',
+                textAlign: TextAlign.center,)
           ],
         )
       );
     });
+  }
+
+  Dialog getProgressDialog() {
+    int displayProgressCount = getDisplayProgressCount();
+    int masterProgressCount = getMasterProgressCount();
+    return Dialog(
+      backgroundColor: darkMode ? const Color.fromARGB(255, 90, 90, 90) : Colors.white,
+      elevation: 10,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Padding(padding: const EdgeInsets.all(15.0),
+            child: Text('$gameDisplay ${type.replaceAll('_', ' ')} (With Current Filter) $displayProgressCount/${displayList.length} ${(displayProgressCount*100/displayList.length).floor()}%'),
+          ),
+          Padding(padding: const EdgeInsets.only(left: 15.0, right: 15.0),
+            child: LinearProgressIndicator(
+              value: displayProgressCount/displayList.length,
+            ),
+          ),
+          Padding(padding: const EdgeInsets.all(15.0),
+            child: Text('$gameDisplay ${type.replaceAll('_', ' ')} (Without Current Filter) $masterProgressCount/${masterList.length} ${(masterProgressCount*100/masterList.length).floor()}%'),
+          ),
+          Padding(padding: const EdgeInsets.only(left: 15.0, right: 15.0, bottom: 8.0),
+            child: LinearProgressIndicator(
+              value: masterProgressCount/masterList.length,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  int getDisplayProgressCount() {
+    int count = 0;
+    for (var element in displayList) {
+      if (element['Selected'] == 1) {
+        count++;
+      }
+    }
+    return count;
+  }
+
+  int getMasterProgressCount() {
+    int count = 0;
+    for (var element in masterList) {
+      if (element['Selected'] == 1) {
+        count++;
+      }
+    }
+    return count;
   }
 
   Dialog getInfoDialog(Map<String, dynamic> data) {
@@ -574,16 +667,18 @@ class _MyHomePageState extends State<MyHomePage> {
     var items = <Widget>[];
 
     for (String key in data.keys) {
-      if (!["Index", "Selected", "Type", "GonePreviousMonth", "GoneNextMonth"].contains(key)) {
+      if (!["Index", "Selected", "Type", "PresentPreviousMonth", "PresentNextMonth"].contains(key)) {
         items.add(Padding(
           padding: const EdgeInsets.all(15.0),
-          child: Text('$key: ${data[key]}', style: TextStyle(color: (darkMode ? Colors.white60 : Colors.black87))),
+          child: Text('$key: ${data[key]}',
+            style: TextStyle(color: (darkMode ? Colors.white60 : Colors.black87)),
+            textAlign: TextAlign.center,),
         ));
       }
     }
 
     return Dialog(
-      backgroundColor: darkMode ? Colors.black : Colors.white,
+      backgroundColor: darkMode ? const Color.fromARGB(255, 90, 90, 90) : Colors.white,
       elevation: 10,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
       child: Column(
@@ -596,7 +691,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Dialog getFilterDialog() {
     return Dialog(
-      backgroundColor: darkMode ? Colors.black : Colors.white,
+      backgroundColor: darkMode ? const Color.fromARGB(255, 90, 90, 90) : Colors.white,
       elevation: 10,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
       child: StatefulBuilder(builder: (BuildContext context, state) {
@@ -605,12 +700,16 @@ class _MyHomePageState extends State<MyHomePage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
         DropdownButton<String>(
-            dropdownColor: darkMode ? const Color(-12632257):Colors.white,
-          hint: Text(filterSelectedChoices[selectedFilter], style: TextStyle(color: !darkMode ? Colors.black87:Colors.white70)),
+            dropdownColor: darkMode ? const Color.fromARGB(255, 90, 90, 90) : Colors.white,
+          hint: Text(filterSelectedChoices[selectedFilter],
+                  style: TextStyle(color: !darkMode ? Colors.black87:Colors.white70),
+                  textAlign: TextAlign.center,),
           items: filterSelectedChoices.map((String value) {
             return DropdownMenuItem<String>(
               value: value,
-              child: Text(value, style: TextStyle(color: (darkMode ? Colors.white60 : Colors.black87))),
+              child: Text(value,
+                style: TextStyle(color: (darkMode ? Colors.white60 : Colors.black87)),
+                textAlign: TextAlign.center,),
             );
           }).toList(),
           onChanged: (s) async {
@@ -669,6 +768,7 @@ class _MyHomePageState extends State<MyHomePage> {
                         onPressed: () {
                           fieldTextEditingController.text = "";
                           onFromSearchChanged("");
+                          prefs?.setString("${game+type}From", from);
                         },
                         icon: Icon(Icons.clear, color: darkMode ? Colors.white : Colors.black),
                       ),
