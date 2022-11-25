@@ -33,6 +33,7 @@ dependencies:
   path_provider: ^2.0.0
   path: ^1.8.2
   file_picker: ^5.0.1
+  syncfusion_flutter_datagrid: ^20.3.58
   url_launcher: any
   share_plus: ^4.0.10+1
   sqflite: any
