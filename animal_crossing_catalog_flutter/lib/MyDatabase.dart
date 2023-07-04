@@ -134,81 +134,94 @@ class MyDatabase extends _$MyDatabase {
 
   Future<List<Map<String, dynamic>>> getSeasonalData(String game, String type,
       String month, int monthNum, List<String> monthList) async {
-    var tempArr = <Map<String, dynamic>>[];
     List<Map<String, dynamic>> filteredArr = [];
-    var seasonArr = <Map<String, dynamic>>[];
-    List<Set<Map<String, dynamic>>> e = await mGetData(game + type);
-    for (var e1 in e) {
-      try {
-        e1.first["Type"] = game + type;
-        tempArr.add(e1.first);
-      } catch (err) {
-        print(err);
+
+    String table = game + type;
+    List<String> tables = mAllTables[table] ??= [table];
+    for (String t in tables) {
+      var seasonArr = <Map<String, dynamic>>[];
+      var tempArr = <Map<String, dynamic>>[];
+      String noPrefixTable = t
+          .replaceAll('acgc_', '')
+          .replaceAll('acww_', '')
+          .replaceAll('accf_', '')
+          .replaceAll('acnl_', '')
+          .replaceAll('acnh_', '');
+      String seasonTable = game + month + noPrefixTable;
+
+      List<Set<Map<String, dynamic>>> e = await mGetData(t);
+      for (var e1 in e) {
+        try {
+          e1.first["Type"] = t;
+          tempArr.add(e1.first);
+        } catch (err) {
+          print(err);
+        }
       }
-    }
 
-    e = await mGetSeasonData(game + month + type);
-    for (var e1 in e) {
-      try {
-        seasonArr.add(e1.first);
-      } catch (err) {
-        print(err);
+      e = await mGetSeasonData(seasonTable);
+      for (var e1 in e) {
+        try {
+          seasonArr.add(e1.first);
+        } catch (err) {
+          print(err);
+        }
       }
-    }
 
-    int nextMonthIndex = monthNum + 1;
-    int previousMonthIndex = monthNum - 1;
+      int nextMonthIndex = monthNum + 1;
+      int previousMonthIndex = monthNum - 1;
 
-    if (nextMonthIndex >= monthList.length) {
-      nextMonthIndex = 1;
-    }
-    if (previousMonthIndex < 1) {
-      previousMonthIndex = monthList.length - 1;
-    }
-
-    List<Set<Map<String, dynamic>>> nextMonthData =
-        await mGetData(game + monthList[nextMonthIndex] + type);
-    List<Set<Map<String, dynamic>>> previousMonthData =
-        await mGetData(game + monthList[previousMonthIndex] + type);
-
-    List<int> nextMonthIndexes = [];
-    List<int> previousMonthIndexes = [];
-
-    for (var element1 in nextMonthData) {
-      var l = element1.toList();
-      for (var element2 in l) {
-        var x = element2["id"] ??= -1;
-        nextMonthIndexes.add(x);
+      if (nextMonthIndex >= monthList.length) {
+        nextMonthIndex = 1;
       }
-    }
-    for (var element1 in previousMonthData) {
-      var l = element1.toList();
-      for (var element2 in l) {
-        var x = element2["id"] ??= -1;
-        previousMonthIndexes.add(x);
+      if (previousMonthIndex < 1) {
+        previousMonthIndex = monthList.length - 1;
       }
-    }
 
-    for (Map<String, dynamic> indexObj in seasonArr) {
-      int index = indexObj["id"];
-      for (Map<String, dynamic> data in tempArr) {
-        if (data["Index"] == index) {
-          var x = data["Index"];
-          data["PresentNextMonth"] = false;
-          data["PresentPreviousMonth"] = false;
-          for (int i in nextMonthIndexes) {
-            if (i == x) {
-              data["PresentNextMonth"] = true;
-              break;
+      List<Set<Map<String, dynamic>>> nextMonthData =
+          await mGetData(game + monthList[nextMonthIndex] + noPrefixTable);
+      List<Set<Map<String, dynamic>>> previousMonthData =
+          await mGetData(game + monthList[previousMonthIndex] + noPrefixTable);
+
+      List<int> nextMonthIndexes = [];
+      List<int> previousMonthIndexes = [];
+
+      for (var element1 in nextMonthData) {
+        var l = element1.toList();
+        for (var element2 in l) {
+          var x = element2["id"] ??= -1;
+          nextMonthIndexes.add(x);
+        }
+      }
+      for (var element1 in previousMonthData) {
+        var l = element1.toList();
+        for (var element2 in l) {
+          var x = element2["id"] ??= -1;
+          previousMonthIndexes.add(x);
+        }
+      }
+
+      for (Map<String, dynamic> indexObj in seasonArr) {
+        int index = indexObj["id"];
+        for (Map<String, dynamic> data in tempArr) {
+          if (data["Index"] == index) {
+            var x = data["Index"];
+            data["PresentNextMonth"] = false;
+            data["PresentPreviousMonth"] = false;
+            for (int i in nextMonthIndexes) {
+              if (i == x) {
+                data["PresentNextMonth"] = true;
+                break;
+              }
             }
-          }
-          for (int i in previousMonthIndexes) {
-            if (i == x) {
-              data["PresentPreviousMonth"] = true;
-              break;
+            for (int i in previousMonthIndexes) {
+              if (i == x) {
+                data["PresentPreviousMonth"] = true;
+                break;
+              }
             }
+            filteredArr.add(data);
           }
-          filteredArr.add(data);
         }
       }
     }

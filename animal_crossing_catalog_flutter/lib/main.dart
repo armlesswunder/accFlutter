@@ -259,7 +259,8 @@ class _MyHomePageState extends State<MyHomePage> {
     "sea_creature",
     "seafood",
     "fish",
-    "insect"
+    "insect",
+    "all_critters"
   ];
 
   bool isSeasonalType(String table) {
@@ -394,7 +395,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     children: [
                       typeDropDown(),
                       IconButton(
-                        icon: const Icon(Icons.search),
+                        icon: const Icon(Icons.filter_alt),
                         color: darkMode ? Colors.white60 : Colors.green,
                         tooltip: 'Filter',
                         onPressed: () {
