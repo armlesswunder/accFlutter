@@ -1,5 +1,5 @@
 # Animal Crossing Catalog
-Animal Crossing Catalog built for Android, iOS, and Windows
+Animal Crossing Catalog built for Android, and Windows
 
 Contact: abw4v.dev@gmail.com
 
@@ -22,10 +22,9 @@ If anyone out there legitimatly wants this app on MacOS, email me and I'll consi
 
 If you want Linux... well... I can see about doing it, but no promises, as I don't currently have a linux machine, nor do I have any desire to see this application come to that platform.
 
-# Donate
-https://www.gofundme.com/f/armlesswunders-dev-donations?utm_campaign=p_cp+share-sheet&utm_medium=copy_link_all&utm_source=customer
-
 # News
+
+3/16/2024: 1.1 Release
 
 9/4/2022: Initial Release for Android and Windows.
 
@@ -118,8 +117,6 @@ Changes item background to red, if the critter is gone next month, or or green, 
 Load a backup of your checklist data.
 
 Backups only attempt to check items, it will never erase items you have checked. It is safe to rename the file to whatever you want.
-
-If you want to import data from android (legacy) acc, you will need to use an external tool like sqlite browser on desktop then export data to mobile apps if you want.
 
 In general: Execute the entire file (minus the header if applicable) and write changes. Don't ask me how to use any external applications, I'm not your personal tech support guy.
 
