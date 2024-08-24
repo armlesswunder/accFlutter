@@ -8,20 +8,12 @@ Contact: abw4v.dev@gmail.com
 ## Android and Windows
 https://github.com/armlesswunder/accFlutter/releases
 
-I will post the android app in play store as a replacement for my existing (legacy) animal crossing catalog app
+Android version is on Google play
 
-## iOS 
-I have a working version of iOS that is not currently released due to Apple's aggresive monetization policies for app store (100$ per year). You can install the iOS app by downloading this repo and installing via XCode if you wish. 
+# Upgrade Database
 
-Please help me raise money if you wish for an official iOS release OR host the app using your own dev account. Email me for details. Thank you in advance! 
-
-NOTE: Donations will not guarantee you anything at all including releases, bug fixes, or new features. You donate out of pure goodwill to me as a way of saying "thank you for your free and public works." I will consider using sufficient funds acquired via donation only to host, develop, and distribute applications and mods. Email me with any concerns.
-
-## MacOS or Linux
-If anyone out there legitimatly wants this app on MacOS, email me and I'll consider doing a release. 
-
-If you want Linux... well... I can see about doing it, but no promises, as I don't currently have a linux machine, nor do I have any desire to see this application come to that platform.
-
+Download the latest database in release files
+  
 # News
 
 3/16/2024: 1.1 Release
@@ -101,10 +93,13 @@ Run-of-the-Mill app settings, top-right
 
 1) Use current date
 2) Critter warning colors
-3) Load app state
-4) Save app state
-5) Guide
-6) FAQ
+3) Favorites
+4) Load app state
+5) Save app state
+6) Guide
+7) FAQ
+8) Reset Data
+9) Upgrade Database
 
 ### Use current date
 Looks at your phones date to determine what month it is. That month is then used to display only critters available in that month by default. You can still change the month in filter to look up facts quickly.
@@ -112,6 +107,9 @@ Default unchecked (updated in 1.4 since so many people are confused by this).
 
 ### Critter warning colors
 Changes item background to red, if the critter is gone next month, or or green, if the critter wasn't in the previous month.
+
+### Favorites
+You can favorite items and filter based on that. This feature isn't super refined bc I don't really consider it useful. I might improve it in the future but it at least works at a minimum for now.
 
 ### Load app state
 Load a backup of your checklist data.
@@ -126,13 +124,19 @@ Create a backup of your checklist data. You'll need an app to share the data to 
 ### Guide
 Brings you here!
 
+### Reset data
+Resets all checkbox data for a game or item type.
+
+### Upgrade Database
+Download a database from me or a trusted developer, and select it when the app prompts you. Your database will automatically be replaced and your checkbox data will be loaded automatically. 
+
+If you choose a bad database or file you may break the entire app such that you lose all of your data and the app may become unusable. If you are nervous about this, make a backup of your data first. If your database becomes corrupt in the process, find the database file and replace it with a valid database.
+
+
 # FAQ
 
 ## Q: This app is missing a bunch of fish/bugs/sea creatures.
 A: You are using the filter feature for displaying only fish/bugs/sea creatures available during a certain month. You can change the month selected in the filter settings (magnifying glass). You can enable/disable 'use current month' in the app settings (gear icon).
-
-If you post negative reviews because you haven't tested this feature, please remove them. If you have tested this feature and you hate it, please discuss that in your review.
-
 
 ## Q: This app has way to many items, it would be so much easier to find what I am looking for if there was some way to filter items.
 
