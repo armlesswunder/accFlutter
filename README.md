@@ -8,11 +8,11 @@ Contact: abw4v.dev@gmail.com
 ## Android and Windows
 https://github.com/armlesswunder/accFlutter/releases
 
-Android version is on Google play
-
 # Upgrade Database
 
-Download the latest database in release files
+Download the latest database here if you need to upgrade
+
+https://github.com/armlesswunder/accFlutter/releases/tag/db
   
 # News
 
